@@ -1,0 +1,33 @@
+<div>
+
+    <h3>
+    %= $c->render_to_string(inline => l('xtg_STATS_DESCRIPTION'));
+    </h3>
+
+    %= form_for '/xt_geoip' => (method => 'POST') => begin
+
+    %= $c->render_to_string(inline => l('xtg_IPT_LIST_DESCRIPTION'));
+      %= submit_button l 'xtg_IPT_LIST', class => 'action'
+      %= hidden_field 'Choice' => 'LIPT'
+
+    % end
+
+    %= form_for '/xt_geoip' => (method => 'POST') => begin
+
+      %= $c->render_to_string(inline => l('xtg_SSH_LIST_DESCRIPTION'));
+
+      %= submit_button l 'xtg_SSH_LIST', class => 'action'
+      %= hidden_field 'Choice' => 'LSSH'
+
+    % end
+
+    %= form_for '/xt_geoip' => (method => 'POST') => begin
+
+      %= $c->render_to_string(inline => l('xtg_F2B_LIST_DESCRIPTION'));
+
+      %= submit_button l 'xtg_F2B_LIST', class => 'action'
+      %= hidden_field 'Choice' => 'LF2B'
+
+    % end
+
+</div>

@@ -1,0 +1,65 @@
+<div>
+
+<HR class='sme-copyrightbar'>
+
+%= form_for '/xt_geoip' => (method => 'POST') => begin
+
+    <h2>
+    %= l('xtg_SERVICE_DESCRIPTION')
+    </h2>
+    %= $c->render_to_string(inline => l('xtg_SERVICE_DESCRIPTION2'));
+
+%	my @services = @{$c->get_services_table('sel')};
+%	if (scalar @services == 0) {
+    	    %=l 'xtg_NO_SERVICES'
+%	} else {
+	<table class="sme-border"><tbody>
+	<tr><th class='sme-border'>
+    	    %=l 'NAME'
+    	    </th><th class='sme-border'>
+    	    %=l 'PORT'
+    	    </th><th class='sme-border'>
+    	    %=l 'STATUS'
+    	    </th><th class='sme-border'>
+    	    %=l 'ACCESS'
+    	    </th><th class='sme-border'>
+    	    %=l 'xtg_BADCOUNTRIES'
+    	    </th><th class='sme-border' colspan='2'>
+    	    %=l 'ACTION'
+    	    </th>
+    	</tr>
+
+%	foreach my $sv (@services) {
+%		my $svBC = $sv->prop('BadCountries') || ' ';
+%		my $svRev = (( $sv->prop('Xt_geoipRev')|| 'disabled') eq 'disabled' )? '==': '!=';
+%		my $color = 'red';
+%		my $deco= "none";
+%		if ($svRev eq '!=' ) { $color = 'green'; }
+%		if ($sv->prop('status') eq 'disabled' || $sv->prop('access') ne 'public') { $color = 'grey'; $deco= "line-through"; }
+%		my $BC = "<font color='$color' style='text-decoration: $deco'>"."$svRev $svBC"."</font>";
+
+        <tr>
+            %= t td => (class => 'sme-border') => $sv->key
+            %= t td => (class => 'sme-border') => $sv->prop('TCPPort')
+            %= t td => (class => 'sme-border') => $sv->prop('status')
+            %= t td => (class => 'sme-border') => $sv->prop('access')
+            %= t td => (class => 'sme-border') => $c->render_to_string(inline => $BC)
+
+%		my $actionModify = "<a href='xt_geoipb?Choice=UPDS&Name=" . $sv->key . "'>" . l('MODIFY') . "</a>"; 
+%		my $actionRemove = "<a href='xt_geoipb?Choice=REMS&Name=" . $sv->key . "'>" . l('REMOVE') . "</a>"; 
+
+	    <td class='sme-border'><%= $c->render_to_string(inline => $actionModify) %></td>
+	    <td class='sme-border'><%= $c->render_to_string(inline => $actionRemove) %></td>
+    	    </tr>
+%	}
+    	</tbody></table>
+%	}
+
+    %= $c->render_to_string(inline => l('xtg_SERVICE_LIST_DESCRIPTION'));
+
+    %= submit_button l 'xtg_SERV_LIST', class => 'action'
+    %= hidden_field 'Choice' => 'LSRV'
+
+ % end
+
+</div>

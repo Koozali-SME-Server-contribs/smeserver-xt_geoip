@@ -1,0 +1,285 @@
+<lexicon lang="bg">
+    
+    <entry>
+        <base>FORM_TITLE</base>
+        <trans><![CDATA[Администрация на XTABLES-ADDONS<br>GeoIP ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>ERROR_UPDATING</base>
+	    <trans>Имаше грешка при актуализацията на xt_geoip.</trans>
+    </entry>
+    
+    <entry>
+	    <base>SUCCESS</base>
+	    <trans>Успешна промяна... Сега IP филтрирането ще вземе предвид въведените държави.</trans>
+	    
+    </entry>
+
+    <entry>
+	    <base>XT_GEOIP_STATUS_DESCRIPTION</base>
+	    <trans><![CDATA[ <ul> <li>IP филтрирането може да бъде включено или изключено със съответния бутон</li> <li>Кодовете на държавите за забраняване могат да бъдат въведени в съответното поле</li> <li>Незабавна  актуализация на таблицата може да бъде заявена тук</li></ul> <p><i>Внимавайте да не забраните IP адресите необходими за работата на сървъра!</i></p> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>NO_CHANGE</base>
+	    <trans>Няма промяна... няма актуализация!</trans>    
+    </entry>
+    
+    <entry>
+            <base>LABEL_GEOIP_STATUS</base>
+            <trans>Текущо филтриране на GEOIP:</trans>
+    </entry>
+    
+    <entry>
+	    <base>LABEL_GEOIP</base>
+	    <trans>Искано филтриране на GEOIP:</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_GEOIP</base>
+	    <trans>Трябва ли филтрирането по държави на произход да се активира?</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_BADCOUNTRIES_STATUS</base>
+            <trans>Текущ списък на забранени кодове на държави:</trans>
+    </entry>
+
+    <entry>
+	    <base>ERR_COUNTRY_NOT_EXIST: {$listerr}</base>
+	    <trans>Кодът на държавата(те) не съществува(т) на сървъра: {$listerr}</trans>
+    </entry>
+
+    <entry>
+	    <base>ERR_COUNTRY_MAX: {$ctr}</base>
+	    <trans>Достигнат максимум за кодове на държави: {$ctr}</trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_BADCOUNTRIES</base>
+	    <trans>Ще се използват нови кодове на държави:</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_BADCOUNTRIES</base>
+	    <trans>Списък на кодове на държави (с главни букви и разделени със запетая).</trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_DATE_UPDATE_STATUS</base>
+	    <trans>Последна актуализация на таблицата на GeoIP:</trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_UPDATE</base>
+	    <trans>Форсиране на актуализация на таблицата на GeoIP:</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_UPDATE</base>
+	    <trans>Таблицата на GeoIP се актуализира всяка седмица, но можете ...</trans>
+    </entry>
+
+    <entry>
+	    <base>IPT_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul><li>Щракнете тук за да видите статистиката на предотвратените връзки</li></ul> ]]></trans>
+    </entry>
+    <entry>
+	    <base>IPT_LIST</base>
+	    <trans>Филтриран</trans>
+    </entry>
+
+    <entry>
+	    <base>SSH_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul><li>Щракнете тук за да видите статистиката на SSH грешките от неблокиран достъп</li></ul> ]]></trans>
+    </entry>
+    <entry>
+	    <base>SSH_LIST</base>
+	    <trans>SSH грешки</trans>
+    </entry>
+
+    <entry>
+	    <base>F2B_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul><li>Щракнете тук за да видите статистиката на предотвратените връзки</li></ul> ]]></trans>
+    </entry>
+    <entry>
+	    <base>F2B_LIST</base>
+	    <trans>забранени</trans>
+    </entry>
+
+    <entry>
+	    <base>STATS_GENERATED</base>
+	    <trans>Генерирана статистика</trans>
+    </entry>
+
+    <entry>
+	    <base>END_OF_STATS</base>
+	    <trans>Край на статистиката</trans>
+    </entry>
+
+    <entry>
+	    <base>INVALID_STATS_TYPE</base>
+	    <trans>Грешен тип статистика</trans>
+    </entry>
+
+    <entry>
+	    <base>STATS_DESCRIPTION</base>
+	    <trans><![CDATA[<HR class="sme-copyrightbar"> <h3>Статистика за Xt_GeoIP</h3><ul> <li>За три периода: ден, седмица и месец</li> <li>Забранените IP адреси по държави сортирани по номер</li> <li>SSH грешки по държави сортирани по номер</li> </ul><p><i>XX означава че държавата не е намерена!</i></p> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>COUNTRY_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul> <li>Щракнете тук за да видите <b>списък на наличните кодове на държави</b></li> </ul> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_COUNTRY_LIST</base>
+	    <trans>Кодове на държави:</trans>
+    </entry>
+    <entry>
+	    <base>COUNTRY_LIST</base>
+	    <trans>Кодове на държави</trans>
+    </entry>
+
+    <entry>
+	    <base>CNTRY_LIST</base>
+	    <trans>Списък</trans>
+    </entry>
+
+    <entry>
+	    <base>END_OF_CODES</base>
+	    <trans>Край на списъка с кодове</trans>
+    </entry>
+
+    <entry>
+	    <base>SERVICE_DESCRIPTION</base>
+	    <trans><![CDATA[ <h2> Филтриране по услуги за Xtables GeoIP</h2><ul> <li>Ако искате различно филтриране, базирано на услуги</li> </ul><p><i></i></p> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_SERVICE</base>
+	    <trans>Име на услуга:</trans>
+    </entry>
+
+    <entry>
+	    <base>PER_SERVICE_GEOIP</base>
+	    <trans>Услуги</trans>
+    </entry>
+
+    <entry>
+	    <base>ADD_SERVICE</base>
+	    <trans>Добави или промени филтриране по услуги</trans>
+    </entry>
+    
+    <entry>
+	    <base>ADD_DESC</base>
+	    <trans>Избирате определена държава за филтриране на тази услуга</trans>
+    </entry>
+    
+    <entry>
+	    <base>REMOVE_SERVICE</base>
+	    <trans>Изтриване на филтриране по услуга</trans>
+    </entry>
+    
+    <entry>
+	    <base>REMOVE_DESC</base>
+	    <trans>Изтривате филтриране по услуга. Ще бъде приложено общо филтриране.</trans>
+    </entry>
+    
+    <entry>
+	    <base>SERV_NOT_BAN</base>
+	    <trans>Нефилтрирана услуга.</trans>
+    </entry>
+
+    <entry>
+	    <base>NO_SERVICES</base>
+	    <trans>Няма услуги.</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_SERV_BADCOUNTRIES_STATUS</base>
+            <trans>Списък на отхвърлените кодове на държави за услугата:</trans>
+    </entry>
+
+    <entry>
+	    <base>SUCCESSFULLY_DELETED_SERVICE</base>
+	    <trans>Успешно изтриване на филтриране по услуга... Ново филтриране ще бъде взето предвид.</trans>    
+    </entry>
+
+    <entry>
+	    <base>BADCOUNTRIES</base>
+	    <trans>Черен списък</trans>    
+    </entry>
+
+    <entry>
+	    <base>ERR_COUNTRY_MAX: {$ctr}</base>
+	    <trans>Твърде много държави са избрани: {$ctr}</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_REVERSE_MATCH</base>
+            <trans>Отхвърли ако</trans>
+    </entry>
+
+    <entry>
+            <base>DESC_REVERSE_MATCH</base>
+            <trans>Следната опция позволява да изберете ако искате да отхвърлите посетители от списък с държави (==) което е по подразбиране, или ако искате да им позволите само на тях да влизат (!=).</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_OTHERS</base>
+            <trans>Стандартен филтър за услугите без правила</trans>
+    </entry>
+
+    <entry>
+            <base>DESC_OTHERS</base>
+            <trans>Изберете ако искате стандартния филтър да бъде приложен за всички входящи връзки или ако не искате да филтрирате портовете вече определени с дадено правило за услуга. Това би позволило да имате услуги, по-малко ограничени от стандартното правило, ако го включите.</trans>
+    </entry>
+
+    <entry>
+	    <base>SERVICE_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul> <li>Щракнете тук за да изберете <b>нови </b>услуги от <b>наличните услуги list</b></li> </ul> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_SERVICE_LIST</base>
+	    <trans>Кодове на услуги:</trans>
+    </entry>
+
+    <entry>
+	    <base>SERV_LIST</base>
+	    <trans>Списък</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_AVAILABLE_SERVICES</base>
+	    <trans><![CDATA[ <h2> Избиране на нови услуги</h2> <ul><li>Изберете тук от другите услуги, които не се управляват самостоятелно. </li><li>Можете да изберете един или повече елементи. Стандартно <b>включени и публични</b>. </li></ul> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_AVAILABLE_SERVICES</base>
+	    <trans>Налични услуги</trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_LICENSE_KEY</base>
+            <trans><![CDATA[ <font color="red">Не е наличен лицензен ключ за GEOIP. Свалянето <b>не е активно</b></font> ]]></trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_MISSING_MODULE</base>
+            <trans><![CDATA[ <font color="red">Филтрирането на GEOIP <b>не е активно</b></font> (iptables) ]]></trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_UNLOADED_MODULE</base>
+            <trans><![CDATA[ <font color="red">Филтрирането на GEOIP <b>не е активно</b></font> (iptables) ]]></trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_FILTER_CHAIN_MISSING</base>
+            <trans><![CDATA[ <font color="red">Филтрирането на GEOIP <b>не е активно</b></font> (iptables) ]]></trans>
+    </entry>
+
+</lexicon>

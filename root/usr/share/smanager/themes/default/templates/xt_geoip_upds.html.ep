@@ -1,0 +1,77 @@
+% layout 'default', title => "Smanager - xt_geoip";
+
+% content_for 'module' => begin
+
+<div id="module" class="module xt_geoip-panel">
+
+    %if ($config->{debug} == 1) {
+	<p>
+	%= dumper $c->current_route
+	%= dumper $xtg_datas
+	</p>
+    %}
+
+    % if ( stash 'error' ) {
+    	<br><div class=sme-error>
+    	%= $c->render_to_string(inline => stash 'error') 
+	</div>
+    %}
+
+    <h1><%= $title %></h1>
+
+    <h2>
+    %= l 'xtg_ADD_SERVICE'
+    </h2><br>
+
+    %= $c->render_to_string(inline => l('xtg_ADD_DESC'));
+
+  %= form_for '/xt_geoipb' => (method => 'POST') => begin
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_SERVICE'
+    </span><span class=data>
+    %= $xtg_datas->{name}
+    </span></p>
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_BADCOUNTRIES_STATUS'
+    </span><span class=data>
+    %= $c->get_badcountries( 0 )
+    </span></p>
+
+    <p>
+    %=l 'xtg_DESC_REVERSE_MATCH'
+    <br><span class=label>
+    %=l 'xtg_LABEL_REVERSE_MATCH'
+    </span><span class=data>
+    % param 'Masq_srv_reverse' => $c->get_reverse('','Xt_geoipRev') unless param 'Masq_srv_reverse';
+    %= select_field 'Masq_srv_reverse' => [['!=' => 'enabled'], ['==' => 'disabled']], class => 'input'
+    </span></p>
+
+    <p>
+    %=l 'xtg_DESC_BADCOUNTRIES'
+    <br><span class=label>
+    %=l 'xtg_LABEL_BADCOUNTRIES'
+    </span><span class=data>
+    % param 'Masq_srv_badcountries' => $c->get_srv_badcountries($xtg_datas->{name}, 0) unless param 'Masq_srv_badcountries';
+    %= text_field 'Masq_srv_badcountries', size => '64', class => 'input'
+    </span></p>
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_SERV_BADCOUNTRIES_STATUS'
+    </span><span class=data>
+    %= $c->get_srv_badcountries( $xtg_datas->{name}, 1 )
+    </span></p>
+
+    <div class='center'>
+    %= submit_button l('SAVE'), class => 'action'
+    </div>
+
+    %= hidden_field 'Choice' => 'UPDS'
+    %= hidden_field 'Name' => $xtg_datas->{name}
+
+  %end
+
+</div>
+
+%end

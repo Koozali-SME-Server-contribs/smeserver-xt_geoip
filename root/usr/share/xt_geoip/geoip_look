@@ -1,0 +1,11 @@
+#! /bin/bash
+
+for par in "$@"
+do
+
+CN=$(/usr/bin/mmdblookup --file /usr/share/GeoIP/GeoLite2-Country.mmdb --ip $par country iso_code 2>/dev/null | cut -d\" -f2|  tr -d '\n')
+if [ -z $CN ]; then echo 'XX'; else echo $CN; fi
+
+done
+
+

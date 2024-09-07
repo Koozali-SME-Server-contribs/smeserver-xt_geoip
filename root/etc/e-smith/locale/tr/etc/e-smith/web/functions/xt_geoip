@@ -1,0 +1,285 @@
+<lexicon lang="tr">
+    
+    <entry>
+        <base>FORM_TITLE</base>
+        <trans><![CDATA[XTABLES-ADDONS Administration<br>GeoIP ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>ERROR_UPDATING</base>
+	    <trans>There was an error while updating xt_geoip.</trans>
+    </entry>
+    
+    <entry>
+	    <base>SUCCESS</base>
+	    <trans>Successful change... Now IP filtering takes into account the countries entered.</trans>
+	    
+    </entry>
+
+    <entry>
+	    <base>XT_GEOIP_STATUS_DESCRIPTION</base>
+	    <trans><![CDATA[ <ul> <li>IP filtering can be enabled or disabled with the appropriate button</li> <li>Codes of the countries to be banished can be entered in the corresponding field</li> <li>An immediate update of the table can be requested here</li></ul> <p><i>Be careful not to ban the IP addresses needed to run your server !</i></p> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>NO_CHANGE</base>
+	    <trans>No change... no update !</trans>    
+    </entry>
+    
+    <entry>
+            <base>LABEL_GEOIP_STATUS</base>
+            <trans>Current GEOIP filtering :</trans>
+    </entry>
+    
+    <entry>
+	    <base>LABEL_GEOIP</base>
+	    <trans>GEOIP filtering desired :</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_GEOIP</base>
+	    <trans>Should filtering by country of origin be activated ?</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_BADCOUNTRIES_STATUS</base>
+            <trans>Current list of banished country codes :</trans>
+    </entry>
+
+    <entry>
+	    <base>ERR_COUNTRY_NOT_EXIST: {$listerr}</base>
+	    <trans>Country code(s) does not exist on the server: {$listerr}</trans>
+    </entry>
+
+    <entry>
+	    <base>ERR_COUNTRY_MAX: {$ctr}</base>
+	    <trans>Country code(s) maximum reached: {$ctr}</trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_BADCOUNTRIES</base>
+	    <trans>New country codes to be used :</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_BADCOUNTRIES</base>
+	    <trans>List of country codes (uppercase et comma-separated).</trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_DATE_UPDATE_STATUS</base>
+	    <trans>Last update of GeoIP table :</trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_UPDATE</base>
+	    <trans>Force the update of GeoIP table :</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_UPDATE</base>
+	    <trans>GeoIP table is updated every week, but you can ...</trans>
+    </entry>
+
+    <entry>
+	    <base>IPT_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul><li>Click here to see the statistics of the prevented connections</li></ul> ]]></trans>
+    </entry>
+    <entry>
+	    <base>IPT_LIST</base>
+	    <trans>süzgeç</trans>
+    </entry>
+
+    <entry>
+	    <base>SSH_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul><li>Click here to see the statistics of SSH errors for non blocked access</li></ul> ]]></trans>
+    </entry>
+    <entry>
+	    <base>SSH_LIST</base>
+	    <trans>hata</trans>
+    </entry>
+
+    <entry>
+	    <base>F2B_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul><li>Click here to see the statistics of the connections banned by fail2ban</li></ul> ]]></trans>
+    </entry>
+    <entry>
+	    <base>F2B_LIST</base>
+	    <trans>afiş</trans>
+    </entry>
+
+    <entry>
+	    <base>STATS_GENERATED</base>
+	    <trans>istatistik</trans>
+    </entry>
+
+    <entry>
+	    <base>END_OF_STATS</base>
+	    <trans>İstatistikleri Göster</trans>
+    </entry>
+
+    <entry>
+	    <base>INVALID_STATS_TYPE</base>
+	    <trans>Gönderici istatistikleri</trans>
+    </entry>
+
+    <entry>
+	    <base>STATS_DESCRIPTION</base>
+	    <trans><![CDATA[<HR class="sme-copyrightbar"> <h3>Statistics for Xt_GeoIP</h3><ul> <li>For 3 periods : Day, Week and Month</li> <li>Banned Ips by country sorted by number</li> <li>Ssh errors by country sorted by number</li> <li>Fail2ban banned IPs by country sorted by number</li> </ul><p><i>XX means Country not found !</i></p> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>COUNTRY_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul> <li>Click here to see a <b>list of available country codes</b></li> </ul> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_COUNTRY_LIST</base>
+	    <trans>Country codes :</trans>
+    </entry>
+    <entry>
+	    <base>COUNTRY_LIST</base>
+	    <trans>Country codes</trans>
+    </entry>
+
+    <entry>
+	    <base>CNTRY_LIST</base>
+	    <trans>List</trans>
+    </entry>
+
+    <entry>
+	    <base>END_OF_CODES</base>
+	    <trans>Sonuçların sonu.</trans>
+    </entry>
+
+    <entry>
+	    <base>SERVICE_DESCRIPTION</base>
+	    <trans><![CDATA[ <h2> Per service filtering for Xtables GeoIP</h2><ul> <li>If you want different filtering based on services</li> </ul><p><i></i></p> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_SERVICE</base>
+	    <trans>Service name :</trans>
+    </entry>
+
+    <entry>
+	    <base>PER_SERVICE_GEOIP</base>
+	    <trans>sınırsız servis</trans>
+    </entry>
+
+    <entry>
+	    <base>ADD_SERVICE</base>
+	    <trans>Add or modify a per service filtering</trans>
+    </entry>
+    
+    <entry>
+	    <base>ADD_DESC</base>
+	    <trans>You are choosing a particular country filtering for this service</trans>
+    </entry>
+    
+    <entry>
+	    <base>REMOVE_SERVICE</base>
+	    <trans>Delete a per service filtering</trans>
+    </entry>
+    
+    <entry>
+	    <base>REMOVE_DESC</base>
+	    <trans>You are deleting a filtering by service. The general filtering will then apply.</trans>
+    </entry>
+    
+    <entry>
+	    <base>SERV_NOT_BAN</base>
+	    <trans>sınırsız servis</trans>
+    </entry>
+
+    <entry>
+	    <base>NO_SERVICES</base>
+	    <trans>sınırsız servis</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_SERV_BADCOUNTRIES_STATUS</base>
+            <trans>List of rejected country codes for the service :</trans>
+    </entry>
+
+    <entry>
+	    <base>SUCCESSFULLY_DELETED_SERVICE</base>
+	    <trans>Per service filtering successfully deleted... New filtering taken into account.</trans>    
+    </entry>
+
+    <entry>
+	    <base>BADCOUNTRIES</base>
+	    <trans>liste</trans>    
+    </entry>
+
+    <entry>
+	    <base>ERR_COUNTRY_MAX: {$ctr}</base>
+	    <trans>Too many countries chosen: {$ctr}</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_REVERSE_MATCH</base>
+            <trans>Reddet</trans>
+    </entry>
+
+    <entry>
+            <base>DESC_REVERSE_MATCH</base>
+            <trans>The following option allow to chose if you want reject visitors from the country list (==) which is the default behaviour, or if you want to only let them in (!=).</trans>
+    </entry>
+
+    <entry>
+            <base>LABEL_OTHERS</base>
+            <trans>General filter only for services without rules</trans>
+    </entry>
+
+    <entry>
+            <base>DESC_OTHERS</base>
+            <trans>Choose if you want to have the general filter to apply to all incoming connections or if you do not want to filter ports already defined with a specific service rule. This would allow you to have a service less restricted than the general rule if you enable this.</trans>
+    </entry>
+
+    <entry>
+	    <base>SERVICE_LIST_DESCRIPTION</base>
+	    <trans><![CDATA[<ul> <li>Click here to select <b>new </b>services among an <b>available services list</b></li> </ul> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_SERVICE_LIST</base>
+	    <trans>sınırsız servis</trans>
+    </entry>
+
+    <entry>
+	    <base>SERV_LIST</base>
+	    <trans>List</trans>
+    </entry>
+
+    <entry>
+	    <base>DESC_AVAILABLE_SERVICES</base>
+	    <trans><![CDATA[ <h2> New Services selection</h2> <ul><li>Select here among the other services not yet managed individually. </li><li>You may select one or more elements. Generally <b>enabled and public</b> ones. </li></ul> ]]></trans>
+    </entry>
+
+    <entry>
+	    <base>LABEL_AVAILABLE_SERVICES</base>
+	    <trans>Kurulabilir paketler</trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_LICENSE_KEY</base>
+            <trans><![CDATA[ <font color="red">GEOIP license key unavailable. Downloading is <b>inactive</b></font> ]]></trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_MISSING_MODULE</base>
+            <trans><![CDATA[ <font color="red">Module xt_geoip is missing. GeoIP based filtering is <b>inactive</b></font> ]]></trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_UNLOADED_MODULE</base>
+            <trans><![CDATA[ <font color="red">Module xt_geoip not loaded. GeoIP based filtering is <b>inactive</b></font> ]]></trans>
+    </entry>
+
+    <entry>
+            <base>ERROR_FILTER_CHAIN_MISSING</base>
+            <trans><![CDATA[ <font color="red">Filtering chain XTGeoIP is not in use. GeoIP based filtering is <b>inactive</b></font> ]]></trans>
+    </entry>
+
+</lexicon>

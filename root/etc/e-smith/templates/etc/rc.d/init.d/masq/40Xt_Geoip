@@ -1,0 +1,12 @@
+# masq : drop from geoip countries
+{
+  $OUT .=<<'EOF';
+   # A blacklist chain for xtables-addons GEOIP
+    /sbin/iptables --new-chain XTGeoIP
+    /sbin/iptables --new-chain XTGeoIP_1
+    /sbin/iptables --append XTGeoIP -j XTGeoIP_1
+    /sbin/iptables --insert INPUT 1 \
+       -j XTGeoIP
+EOF
+
+}

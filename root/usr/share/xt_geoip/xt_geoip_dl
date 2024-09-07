@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Original script from xtables-addons
+# SME specific use of ConfigDB
+# replace /usr/libexec/xtables-addons/xt_geoip_dl in /usr/share/xt_geoip/update_base
+
+status=$(/sbin/e-smith/config getprop geoip status)
+if [[ "$status" != "enabled" ]]
+then
+    echo "Geoip is not enabled. No download."
+    exit 1
+fi
+
+LicenseKey=$(/sbin/e-smith/config getprop geoip LicenseKey)
+if [ -z $LicenseKey ]
+then
+    echo "No License Key available. Downloading cannot be performed"
+    exit 1
+fi
+
+rm -rf GeoLite2-Country-CSV_*
+
+if ( ! wget -O GeoLite2-Country-CSV.zip -q "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LicenseKey}&suffix=zip" )
+then
+    echo "Error while downloading"
+    exit 2
+fi
+
+unzip -q GeoLite2-Country-CSV.zip
+rm -f GeoLite2-Country-CSV.zip

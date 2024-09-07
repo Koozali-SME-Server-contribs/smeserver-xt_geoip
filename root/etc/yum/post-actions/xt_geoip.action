@@ -1,0 +1,4 @@
+kernel*:any:/etc/e-smith/events/actions/xt_geoip_kmod
+kmod*:any:/etc/e-smith/events/actions/xt_geoip_kmod
+xtables-addons*:any:/etc/e-smith/events/actions/xt_geoip_kmod
+

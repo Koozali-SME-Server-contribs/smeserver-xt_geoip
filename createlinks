@@ -1,0 +1,62 @@
+#!/usr/bin/perl -w
+
+use esmith::Build::CreateLinks qw(:all);
+
+#--------------------------------------------------
+# actions for geoip-update event
+#--------------------------------------------------
+
+# links to add
+panel_link("xt_geoip","manager");
+
+# templates to expand
+for my $event (qw(xt_geoip-modify xt_geoip-update xt_geoip-service 
+	smeserver-xt_geoip-update))
+{
+    templates2events("/etc/rc.d/init.d/masq", $event);
+    templates2events("/etc/crontab", $event);
+    }
+
+
+# services to launch on event
+for my $event (qw(xt_geoip-modify xt_geoip-update smeserver-xt_geoip-update))
+{
+    safe_symlink("restart", 
+        "root/etc/e-smith/events/$event/services2adjust/masq");
+}
+
+for my $event (qw(xt_geoip-service))
+{
+    safe_symlink("adjust", 
+        "root/etc/e-smith/events/$event/services2adjust/masq");
+}
+
+# actions to perform
+for my $event (qw(xt_geoip-update bootstrap-console-save
+        console-save  smeserver-xt_geoip-update))
+{
+    event_link("smeserver-xt_geoip-download-action", $event, "10");
+}
+for my $event (qw(bootstrap-console-save e-smith-packetfilter-update
+        smeserver-xt_geoip-update remote-access-update))
+{
+    event_link("xt_geoip_kmod", $event, "15");
+}
+
+# for smeserver-manager
+my $event= "smeserver-xt_geoip-update";
+safe_symlink('restart', "root/etc/e-smith/events/$event/services2adjust/smanager");
+event_link('navigation2-conf', "$event", '80');
+event_link('routes2-conf', "$event", '80');
+event_link('locales2-conf', "$event", '80');
+
+# backup
+use esmith::Build::Backup qw(:all);
+backup_includes("smeserver-xt_geoip", qw(
+/usr/share/xt_geoip/BE/
+/usr/share/xt_geoip/LE/
+/var/lib/xt_geoip/
+));
+backup_excludes("smeserver-xt_geoip", qw(
+/var/lib/xt_geoip/README.txt
+));

@@ -1,0 +1,14 @@
+#!/bin/bash
+cd /usr/share/xt_geoip
+if [ -f ./LE/A1.iv4 ]
+then
+    FILES=$(find ./LE -name A1.iv4 -type f -mtime +7)
+    if [ -z $FILES ]
+    then
+	echo "recent base, no download"
+	exit 0
+    fi
+fi
+echo "download base for xt_geoip"
+./update_base  > /dev/null 2>&1
+exit 0

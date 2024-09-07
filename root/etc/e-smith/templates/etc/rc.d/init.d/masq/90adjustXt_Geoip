@@ -1,0 +1,111 @@
+{
+    my $BC = $masq{BadCountries} || '';
+    my $GP = $masq{GeoIP} || 'disabled';
+    my $KERNEL = `/bin/uname -r`;
+    chomp($KERNEL);
+    my $PATH_MODULE = "/lib/modules/$KERNEL/extra/xt_geoip.ko";
+    my $PATH2_MODULE = "/lib/modules/$KERNEL/weak-updates/xt_geoip.ko";
+    my $PATH3_MODULE = "/lib/modules/$KERNEL/weak-updates/xtables-addons/xt_geoip.ko";
+    my $port;
+    my @locPorts;
+    my $servStatus;
+    my $locBC;
+
+   # to allow reload  without locking  just after initial  install   
+   $OUT .=<<'EOF';
+   iptables -n --list XTGeoIP >/dev/null 2>&1
+   test=$?
+   if [[ $test -eq 1 ]] ; then
+   # A blacklist chain for xtables-addons GEOIP
+    /sbin/iptables --new-chain XTGeoIP
+    /sbin/iptables --new-chain XTGeoIP_1
+    /sbin/iptables --append XTGeoIP -j XTGeoIP_1
+    /sbin/iptables --insert INPUT 1 \
+       -j XTGeoIP
+   fi
+EOF
+
+    # Find the current XTGeoIP_$$ chain, and create a new one.
+    $OUT .=<<'EOF';
+    OLD_XTGeoIP=$(get_safe_id XTGeoIP filter find)
+    NEW_XTGeoIP=$(get_safe_id XTGeoIP filter new)
+    /sbin/iptables --new-chain $NEW_XTGeoIP
+EOF
+
+    if ( $GP eq 'enabled' )
+    {
+        if (-s $PATH_MODULE || -s $PATH2_MODULE || -s $PATH3_MODULE)
+        {
+
+    # do not block Localhost(s)
+    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -s 127.0.0.0/24 -j RETURN\n";
+
+    # do not block LAN
+    my $locals = "@locals";
+    if (@locals)
+    {
+        # Make a new local_chk chain and add any networks found in networks db
+        foreach my $local (@locals)
+        {
+            # If the network is a remote vpn subnet, restrict it to the ipsec0
+            # interface.
+            my ($net, $msk) = split /\//, $local;
+            my $netrec = $nets->get($net);
+            die "Can't find network $net in networks db!\n" unless $netrec;
+            $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -s $local";
+            if (($netrec->prop('remoteVPNSubnet') || 'no') eq 'yes')
+            {
+                $OUT .= " --in-interface ipsec0";
+            }
+            $OUT .= " -j RETURN\n";
+        }
+    }
+
+	my @services = split(/,/, $masq{'XtServices'});
+	
+	foreach my $servName (@services) 
+	{
+    	    $port = ${$servName}{'TCPPort'} || '';
+    	    my $servStatus = ${$servName}{'status'} || 'disabled';
+    	    my $servAccess = ${$servName}{'access'} || 'private';
+    	    my $locBC = ${$servName}{'BadCountries'} || '';
+            my $reverse = ( ( ${$servName}{'XTGeoipRev'} || 'disabled' ) eq "enabled" )? "!":  "";
+    	    if ($port ne '' and $servStatus eq 'enabled' and $servAccess eq 'public' and $locBC ne '') {
+                push  @locPorts, $port;
+		my $multi = ( $port =~ /[,:]/ )? "-m multiport --dports" : "--dport";
+                $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j ULOG --ulog-prefix \"GeoIP BAN: $servName\"\n";
+                $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j DROP\n";
+    	    }
+	}
+
+   # block for all or other ports should move there
+   if ($BC ne '') {
+	            my $reverse = ( ( $masq{'XTGeoipRev'} || 'disabled' ) eq "enabled" )? "!":  "";
+        	    my $others = ( ( $masq{'XTGeoipOther'}  || 'disabled') eq "enabled") ? 1 : 0;
+        	    @locPorts = () unless $others;
+            	    if (@locPorts != 0) {
+            		my $LocPorts = join ',', @locPorts;
+                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip -m multiport ! --dports $LocPorts $reverse --src-cc $BC -j ULOG --ulog-prefix \"GeoIP BAN: OTHER\"\n";
+                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip -m multiport ! --dports $LocPorts  $reverse --src-cc $BC -j DROP\n";
+		    } else {
+                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j ULOG --ulog-prefix \"GeoIP BAN: ALL\"\n";
+                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j DROP\n";
+            	    }
+                }
+                $OUT .= "    /sbin/iptables --append  \$NEW_XTGeoIP" .
+                " -j RETURN\n";
+            ## end of add
+
+        }
+    }
+
+
+    # Having created a new XTGeoIP chain, activate it and destroy the old.
+    $OUT .=<<'EOF';
+    /sbin/iptables --replace XTGeoIP 1 \
+            --jump $NEW_XTGeoIP
+    /sbin/iptables --flush $OLD_XTGeoIP
+    /sbin/iptables --delete-chain $OLD_XTGeoIP
+EOF
+
+}

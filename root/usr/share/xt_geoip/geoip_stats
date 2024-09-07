@@ -1,0 +1,135 @@
+#!/bin/sh 
+# Read the log files depending on $1 (PREF)
+# Read all of the IPs concerned, search countries and count them.  
+# exec crontab 2h AM for previous day
+
+EXECDIR="/usr/share/xt_geoip"
+STATDIR="/var/lib/xt_geoip"
+
+case $1 in
+    "ssh")
+        PREF="ssh"
+        LOGDIR="/var/log/sshd"
+        CMD1='cat'
+        CMD2=' | grep -i '
+        CMD3=' | grep -E "(Failed password|Invalid user \w+ from)" | sed -e "s/^.*from //" -e "s/ port.*$//" >> $RESFILE'
+    ;;
+    "ipt")
+        PREF="ipt"
+        LOGDIR="/var/log/iptables"
+        CMD1='zcat -f '
+        CMD2=' | grep -i '
+        CMD3=' | grep "GeoIP BAN" | sed -e "s/^.*SRC=//" -e "s/ DST=.*$//" >> $RESFILE'
+    ;;
+     "f2b")
+ 	if [[ -x /bin/fail2ban-client && -f /var/log/fail2ban/daemon.log ]]
+ 	then
+     	    PREF="f2b"
+     	    LOGDIR="/var/log/fail2ban"
+     	    CMD1='zcat -f '
+     	    CMD2=' | grep -i '
+     	    CMD3=' | grep -E "] Ban " | sed -e "s/^.* Ban //" >> $RESFILE'
+ #        	CMD3=' | grep -E ": NOTICE  [.*] Ban" | sed -e "s/^.* Ban //" >> $RESFILE'
+ 	else
+ 	    echo "No fail2ban enabled here"
+ 	    exit 1
+ 	fi
+     ;;
+    *)
+	echo "usage : $0 [ssh|ipt|f2b|....]"
+        exit 1
+    ;;
+esac
+
+
+# files of the day
+RESFILE="$STATDIR/${PREF}_ip.lst"
+RES2FILE="$STATDIR/${PREF}_country.lst"
+# permanent files
+BASEFILE="$STATDIR/Base_${PREF}_ip.lst"
+BASE2FILE="$STATDIR/Base_${PREF}_country.lst"
+ARCHFILE="$STATDIR/ArchBase_${PREF}_ip.lst"
+ARCH2FILE="$STATDIR/ArchBase_${PREF}_country.lst"
+# tempo
+TMPFILE=$(mktemp $STATDIR/xt_${PREF}.XXXXXXX)
+# Day - 1
+MONTH=$(date --date '1 day ago' +%B)
+LOGDAY="$(LC_ALL=C date --date '1 day ago' '+%h %e')"
+DATE=$(date --date '1 day ago' '+%Y-%m-%d')
+ARCHDATE=$(date --date '90 day ago' '+%Y-%m-%d')
+[[ $PREF = 'f2b' ]] && LOGDAY=$DATE
+
+cd $EXECDIR
+
+# yesterday already in base ?
+if  [ -f $BASEFILE ]
+then
+    if (fgrep $DATE $BASEFILE > /dev/null 2>&1)
+    then 
+        echo "$0 : $PREF already run for that date. Please verify this !"
+        exit 1
+    fi
+fi
+
+cp /dev/null $RESFILE
+
+# All logfiles update for 2 days, not empty
+for file in $(find $LOGDIR/* -type f -mtime -2 -size +50c)
+do
+#    echo "$(echo $CMD1 $file $CMD2 \'^"$LOGDAY"\' $CMD3)"
+    eval "$(echo $CMD1 $file $CMD2 \'^"$LOGDAY"\' $CMD3)"
+done
+
+# number of incidents by IP, sorted by IP
+awk  -F ";" -v OFS=";" \
+ '{t[$1]=$1; t1[$1]+=1} END {for(n in t) print t[n], t1[n]}' $RESFILE | sort -t ";" -n -k 1 > $TMPFILE
+
+# +date, +country code
+awk -F ";" -v v1=$DATE -v OFS=";" \
+'{ printf "%s",v1 ";" $0 ";"; system("./geoip_look " $1) }' $TMPFILE > $RESFILE
+
+# number of incidents by country code, sorted reverse by number
+awk -F ";" -v v1=$DATE -v OFS=";" \
+ '{t[$4]=$4; t1[$4]+=$3} END {for(n in t) print v1, t[n], t1[n]}' $RESFILE | sort -t ";" -k 3 -r -n > $RES2FILE
+
+rm -f $TMPFILE
+
+# concatenate into bases
+cat $RESFILE >> $BASEFILE
+cat $RES2FILE >> $BASE2FILE
+
+touch ${TMPFILE}_last3m
+touch ${TMPFILE}_older
+
+# split IP bases file between 'last 3 months' and 'archives'
+awk -F ';' "\$1 > \"$ARCHDATE\" {print > (\"${TMPFILE}_last3m\"); next} {print > (\"${TMPFILE}_older\")}" $BASEFILE
+
+if [ -f ${TMPFILE}_older ]
+then
+    cat ${TMPFILE}_older >> $ARCHFILE
+    cp ${TMPFILE}_last3m $BASEFILE
+fi
+cp /dev/null ${TMPFILE}_last3m
+cp /dev/null ${TMPFILE}_older
+ 
+# split COUNTRY bases file between 'last 3 months' and archives
+ awk -F ';' "\$1 > \"$ARCHDATE\" {print > (\"${TMPFILE}_last3m\"); next} {print > (\"${TMPFILE}_older\")}" $BASE2FILE
+ 
+if [ -f ${TMPFILE}_older ]
+then
+     cat ${TMPFILE}_older >> $ARCH2FILE
+     cp ${TMPFILE}_last3m $BASE2FILE
+fi
+
+rm -f ${TMPFILE}_last3m ${TMPFILE}_older
+
+# for mail
+if [ -s $RES2FILE ]
+then
+    echo "parse $LOGDIR for $PREF events"
+    cat $RES2FILE
+fi
+
+# delete files of today
+#rm -f $RESFILE $RES2FILE
+

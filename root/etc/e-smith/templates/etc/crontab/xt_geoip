@@ -1,0 +1,13 @@
+{
+my $output = ( ($masq{'XTlogmail'} || "disabled") eq "disabled" )?  ">/dev/null" : "";
+
+$OUT .= "
+#       saturday at 06:00 update xtables geoip base
+00 06 * * 6 root /usr/share/xt_geoip/update_base $output
+45 1 * * * root /usr/share/xt_geoip/geoip_stats f2b $output
+50 1 * * * root /usr/share/xt_geoip/geoip_stats ssh $output
+55 1 * * * root /usr/share/xt_geoip/geoip_stats ipt $output
+05 2 * * * root /usr/share/xt_geoip/geoip_listat $output
+#
+";
+}

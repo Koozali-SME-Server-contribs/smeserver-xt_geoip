@@ -1,0 +1,14 @@
+<div>
+
+    <HR class='sme-copyrightbar'>
+
+    %= form_for '/xt_geoip' => (method => 'POST') => begin
+
+    %= $c->render_to_string(inline => l('xtg_COUNTRY_LIST_DESCRIPTION'));
+    %= submit_button l 'xtg_CNTRY_LIST', class => 'action'
+    %= hidden_field 'Choice' => 'LCOD'
+
+    % end
+</div>
+
+<!-- button_to l('xtg_CNTRY_LIST') => "/xt_geoip" => (class => 'action') -->

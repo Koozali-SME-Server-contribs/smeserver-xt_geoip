@@ -1,0 +1,14 @@
+#!/bin/sh
+
+EXECDIR="/usr/share/xt_geoip"
+STATDIR="/var/lib/xt_geoip"
+
+for pref in $(echo 'ipt ssh f2b')
+do
+    echo "" > ${STATDIR}/extA_${pref}_country.lst
+    for period in $(echo 'D W M')
+    do
+	${EXECDIR}/geoip_exstat $pref $period >> $STATDIR/extA_${pref}_country.lst
+    done
+    cat $STATDIR/extA_${pref}_country.lst
+done

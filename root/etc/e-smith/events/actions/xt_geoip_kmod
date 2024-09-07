@@ -1,0 +1,6 @@
+#!/bin/bash
+
+modprobe -r xt_geoip
+weak-modules  --add-kernel 
+modprobe xt_geoip
+

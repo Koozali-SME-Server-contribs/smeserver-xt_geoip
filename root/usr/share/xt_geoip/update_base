@@ -1,0 +1,5 @@
+cd /usr/share/xt_geoip
+if ( ./xt_geoip_dl )
+then
+    /usr/libexec/xtables-addons/xt_geoip_build GeoIPCountryWhois.csv
+fi
