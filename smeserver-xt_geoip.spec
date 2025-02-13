@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 23
+%define release 24
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -56,6 +56,7 @@ rm -f %{name}-%{version}-filelist
  --file /usr/share/xt_geoip/geoip_stats 'attr(0755, root, root)'\
  --file /usr/share/xt_geoip/xt_geoip_dl 'attr(0750, root, root)'\
  --file /usr/share/xt_geoip/update_base 'attr(0750, root, root)'\
+ --file /usr/share/xt_geoip/xt_geoip_build_maxmind 'attr(0750, root, root)'\
     > %{name}-%{version}-filelist
 echo "%doc COPYING"  >> %{name}-%{version}-filelist
 
@@ -81,6 +82,11 @@ fi
 
 
 %changelog
+* Thu Feb 13 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-24.sme
+- move scriptoig back to /usr/share/geoip
+- Lose the LE/BE (Little/Big Endian) parts as iptables can't seme to read the file in subdirs
+- Update ULOG to NFLOG in rules but restricts the number of countries
+
 * Wed Feb 12 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-23.sme
 - Update dependencies for xtables addons
 - Remove $ from config in templates

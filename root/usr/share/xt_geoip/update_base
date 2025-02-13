@@ -1,5 +1,8 @@
+# Run the builder - this leaves all the file in /usr.share/xt_geoip
+# It's messy but I don't know how to get iptables to read a sub dir
+
 cd /usr/share/xt_geoip
 if ( ./xt_geoip_dl )
 then
-    /usr/libexec/xtables-addons/xt_geoip_build GeoIPCountryWhois.csv
+    /usr/share/xt_geoip/xt_geoip_build_maxmind
 fi

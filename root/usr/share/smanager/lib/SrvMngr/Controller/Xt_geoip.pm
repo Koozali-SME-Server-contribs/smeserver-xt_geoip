@@ -244,7 +244,8 @@ sub get_stat_license_key {
 } ## end sub get_stat_license_key
 
 sub get_date_update {
-    my $file = "/usr/share/xt_geoip/LE/A1.iv4";
+    #my $file = "/usr/share/xt_geoip/LE/A1.iv4";
+    my $file = "/usr/share/xt_geoip/A1.iv4";
     my $filetime = (-e $file) ? (stat($file))[9] : 0;
     return strftime("%Y/%m/%d %H:%M", localtime($filetime)) || '';
 } ## end sub get_date_update
@@ -318,7 +319,7 @@ sub generateStats {
     return $out;
 } ## end sub generateStats
 
-#Subroutine to list counries codes
+#Subroutine to list countries codes
 sub generateCodes {
     my $c   = shift;
     my $out = '';
@@ -426,7 +427,8 @@ sub must_exist {
         return $c->l('xtg_ERROR_COUNTRY_MAX', $ctr) if ($ctr > 50);
 
         foreach my $bcs (@mq_bcs) {
-            my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
+            #my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
+            my $file = "/usr/share/xt_geoip/" . $bcs . ".iv4";
             if (!-f $file) { $listerr .= $bcs . ","; }
         }
         return $c->l('xtg_ERROR_COUNTRY_NOT_EXIST', $listerr) if $listerr;

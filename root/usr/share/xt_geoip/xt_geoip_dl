@@ -3,6 +3,9 @@
 # Original script from xtables-addons
 # SME specific use of ConfigDB
 # replace /usr/libexec/xtables-addons/xt_geoip_dl in /usr/share/xt_geoip/update_base
+# Koozali SME v11 
+# Now migrated to using files in /usr/share/xt_geoip
+
 
 status=$(/sbin/e-smith/config getprop geoip status)
 if [[ "$status" != "enabled" ]]
@@ -26,5 +29,9 @@ then
     exit 2
 fi
 
-unzip -q GeoLite2-Country-CSV.zip
+# unzip -q GeoLite2-Country-CSV.zip
+if [ ! -d "/usr/share/xt_geoip/GeoLite2-Country-CSV" ]; then
+  mkdir -p "/usr/share/xt_geoip/GeoLite2-Country-CSV";
+fi
+unzip -o -q -j GeoLite2-Country-CSV.zip -d /usr/share/xt_geoip/GeoLite2-Country-CSV
 rm -f GeoLite2-Country-CSV.zip

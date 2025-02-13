@@ -73,7 +73,7 @@ EOF
     	    if ($port ne '' and $servStatus eq 'enabled' and $servAccess eq 'public' and $locBC ne '') {
                 push  @locPorts, $port;
 		my $multi = ( $port =~ /[,:]/ )? "-m multiport --dports" : "--dport";
-                $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j ULOG --ulog-prefix \"GeoIP BAN: $servName\"\n";
+                $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j NFLOG --nflog-prefix \"GeoIP BAN: $servName\"\n";
                 $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j DROP\n";
     	    }
 	}
@@ -85,10 +85,10 @@ EOF
         	    @locPorts = () unless $others;
             	    if (@locPorts != 0) {
             		my $LocPorts = join ',', @locPorts;
-                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip -m multiport ! --dports $LocPorts $reverse --src-cc $BC -j ULOG --ulog-prefix \"GeoIP BAN: OTHER\"\n";
+                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip -m multiport ! --dports $LocPorts $reverse --src-cc $BC -j NFLOG --nflog-prefix \"GeoIP BAN: OTHER\"\n";
                         $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip -m multiport ! --dports $LocPorts  $reverse --src-cc $BC -j DROP\n";
 		    } else {
-                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j ULOG --ulog-prefix \"GeoIP BAN: ALL\"\n";
+                        $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j NFLOG --nflog-prefix \"GeoIP BAN: ALL\"\n";
                         $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j DROP\n";
             	    }
                 }
