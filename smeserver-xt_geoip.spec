@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 24
+%define release 25
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -82,9 +82,12 @@ fi
 
 
 %changelog
+* Thu Feb 13 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-25.sme
+- Fix various typos as per bug but more to find [SME: 12472]
+
 * Thu Feb 13 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-24.sme
-- move scriptoig back to /usr/share/geoip
-- Lose the LE/BE (Little/Big Endian) parts as iptables can't seme to read the file in subdirs
+- move scripting back to /usr/share/geoip
+- Lose the LE/BE (Little/Big Endian) parts as iptables can't seem to read the file in subdirs
 - Update ULOG to NFLOG in rules but restricts the number of countries
 
 * Wed Feb 12 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-23.sme

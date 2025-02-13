@@ -31,7 +31,7 @@
 
 %	foreach my $sv (@services) {
 %		my $svBC = $sv->prop('BadCountries') || ' ';
-%		my $svRev = (( $sv->prop('Xt_geoipRev')|| 'disabled') eq 'disabled' )? '==': '!=';
+%		my $svRev = (( $sv->prop('XTGeoipRev')|| 'disabled') eq 'disabled' )? '==': '!=';
 %		my $color = 'red';
 %		my $deco= "none";
 %		if ($svRev eq '!=' ) { $color = 'green'; }

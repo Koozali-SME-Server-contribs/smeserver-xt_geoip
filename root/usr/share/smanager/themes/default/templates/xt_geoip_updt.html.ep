@@ -35,7 +35,7 @@
     <br><span class=label>
     %=l 'xtg_LABEL_REVERSE_MATCH'
     </span><span class=data>
-    % param 'Masq_reverse' => $c->get_reverse('masq','Xt_geoipRev') unless param 'Masq_reverse';
+    % param 'Masq_reverse' => $c->get_reverse('masq','XTGeoipRev') unless param 'Masq_reverse';
     %= select_field 'Masq_reverse' =>  [[ '!=' => 'enabled'], [ '==' => 'disabled']], class => 'input'
     </span></p>
 
@@ -59,7 +59,7 @@
     <br><span class=label>
     %=l 'xtg_LABEL_OTHERS'
     </span><span class=data>
-    % param 'Masq_others' => $c->get_reverse('masq','Xt_geoipOther') unless param 'Masq_others';
+    % param 'Masq_others' => $c->get_reverse('masq','XT_GeoipOther') unless param 'Masq_others';
     %= select_field 'Masq_others' => [[(l 'DISABLED') => 'disabled'], [(l 'ENABLED') => 'enabled']], class => 'input'
     </span></p>
 
