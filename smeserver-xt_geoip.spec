@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 22
+%define release 23
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -14,14 +14,17 @@ Source: %{name}-%{version}.tar.xz
 BuildArchitectures: noarch
 BuildRoot: /var/tmp/%{name}-%{version}
 BuildRequires: e-smith-devtools
-Requires: e-smith-release >= 10.0
-Requires: server-manager >= 0.1.0-23
-Requires: xtables-addons = 2.14
-Requires: GeoIP >= 1.5.0
+Requires: e-smith-release >= 11.0
+Requires: server-manager >= 11
+Requires: xtables-addons >= 3.25
+# Is this required now?
+Requires: GeoIP >= 1.6.0
 Requires: libmaxminddb >= 1.1.1
+# Is this required now?
 Requires: libmaxminddb-devel >= 1.1.1
 Requires: geolite2-country
 Requires: geolite2-city
+Requires: perl-Text-CSV_XS
 AutoReqProv: no
 
 %description
@@ -78,6 +81,11 @@ fi
 
 
 %changelog
+* Wed Feb 12 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-23.sme
+- Update dependencies for xtables addons
+- Remove $ from config in templates
+- Add db open entries to subs
+
 * Sat Sep 07 2024 cvs2git.sh aka Brian Read <brianr@koozali.org> 1.3.1-22.sme
 - Roll up patches and move to git repo [SME: 12338]
 
