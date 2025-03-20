@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 25
+%define release 26
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -82,6 +82,9 @@ fi
 
 
 %changelog
+* Thu Mar 20 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-26.sme
+- Fix createlink typo remote-access-update [SME: 12438]
+
 * Thu Feb 13 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-25.sme
 - Fix various typos as per bug but more to find [SME: 12472]
 
