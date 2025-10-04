@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 26
+%define release 27
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -69,10 +69,6 @@ rm -rf %{name}-%{version}
 
 %post
 
-if (systemctl list-unit-files |grep smanager) then
-  echo "Smanager restart in spec file"
-  /sbin/e-smith/signal-event smanager-refresh;
-fi
 
 %postun
 
@@ -82,6 +78,9 @@ fi
 
 
 %changelog
+* Sat Oct 04 2025 Brian Read <brianr@koozali.org> 1.3.1-27.sme
+- Remove smanager-refresh from spec file [SME: 13212]
+
 * Thu Mar 20 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-26.sme
 - Fix createlink typo remote-access-update [SME: 12438]
 
