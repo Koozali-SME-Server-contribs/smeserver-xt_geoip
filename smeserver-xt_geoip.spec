@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 27
+%define release 28
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -78,6 +78,9 @@ rm -rf %{name}-%{version}
 
 
 %changelog
+* Tue Oct 07 2025 Brian Read <brianr@koozali.org> 1.3.1-28.sme
+- Add UTF8 and avoid potential DB caching problems [SME: 13209]
+
 * Sat Oct 04 2025 Brian Read <brianr@koozali.org> 1.3.1-27.sme
 - Remove smanager-refresh from spec file [SME: 13212]
 

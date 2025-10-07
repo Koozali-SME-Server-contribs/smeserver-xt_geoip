@@ -19,13 +19,13 @@ use Locale::gettext;
 use SrvMngr::I18N;
 use SrvMngr qw( theme_list init_session );
 
-# our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+# our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
 my ($cdb);
 
 sub main {
     my $c = shift;
     $c->app->log->info($c->log_req);
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $title = $c->render_to_string(inline => ($c->l('xtg_FORM_TITLE')));
     my %xtg_datas = ();
     $xtg_datas{'choice'} = '';
@@ -36,7 +36,7 @@ sub main {
 sub do_display {
     my $c = shift;
     $c->app->log->info($c->log_req);
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $title = $c->render_to_string(inline => ($c->l('xtg_FORM_TITLE')));
     my $choice = $c->param('Choice');
     my $result;
@@ -107,7 +107,7 @@ sub do_display {
 sub do_action {
     my $c = shift;
     $c->app->log->info($c->log_req);
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $rt        = $c->current_route;
     my $title     = $c->render_to_string(inline => ($c->l('xtg_FORM_TITLE')));
     my %xtg_datas = ();
@@ -198,7 +198,7 @@ sub do_action {
 sub get_badcountries {
     my $c    = shift;
     my $full = shift;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $badc = $cdb->get_prop("masq", "BadCountries") || "";
     return $badc unless $full;
     my $rev = (($cdb->get_prop("masq", "XTGeoipRev") || "disabled") eq "enabled") ? "!=" : "==";
@@ -233,7 +233,7 @@ sub get_stat_geoip {
 
 sub get_stat_license_key {
     my $c = shift;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
 
     if (($cdb->get_prop('geoip', 'status') || 'disabled') eq 'enabled') {
         if (($cdb->get_prop('geoip', 'LicenseKey') || '') ne '') {
@@ -257,7 +257,7 @@ sub get_srv_name {
 
 sub get_services_table {
     my $c = shift;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $choice = shift || 'sel';
     my @services;
     my @serv_rec;
@@ -280,7 +280,7 @@ sub get_services_table {
 
 sub get_srv_badcountries {
     my ($c, $name, $full) = @_;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $badc = $cdb->get_prop($name, "BadCountries") || "";
     return $badc unless $full;
     my $rev = (($cdb->get_prop($name, "XTGeoipRev") || "disabled") eq "enabled") ? "!=" : "==";
@@ -349,7 +349,7 @@ sub generateCodes {
 #Subroutine to list other services codes
 sub otherServices {
     my ($c, $choice) = @_;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my %serv_ok = map { $_ => 1 } split(/,/, $cdb->get_prop("masq", "XtServices"));
 
     # unless $choice eq 'all';
@@ -370,7 +370,7 @@ sub otherServices {
 #Subroutine to update list services codes
 sub do_otherServices {
     my $c = shift;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $serv1 = ($cdb->get_prop("masq", "XtServices")) || '';
     my $serv2 = join(',', @{ $c->every_param('Selectedservices') });
     $cdb->set_prop("masq", "XtServices", $serv2) if ($serv1 ne $serv2);
@@ -379,7 +379,7 @@ sub do_otherServices {
 
 sub change_settings {
     my $c = shift;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $mq_bc    = get_badcountries();
     my $mq_gp    = get_geoip();
     my $masq     = $cdb->get('masq') || "disabled";
@@ -438,7 +438,7 @@ sub must_exist {
 
 sub remove_serv {
     my ($c) = @_;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $name = $c->param('Name');
 
     # Untaint $name before use in system()
@@ -464,7 +464,7 @@ sub remove_serv {
 
 sub modify_serv {
     my ($c) = @_;
-    our $cdb = esmith::ConfigDB->open() or die "Couldn't open ConfigDB\n";
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
     my $name = $c->param('Name');
 
     # Untaint $name before use in system()
