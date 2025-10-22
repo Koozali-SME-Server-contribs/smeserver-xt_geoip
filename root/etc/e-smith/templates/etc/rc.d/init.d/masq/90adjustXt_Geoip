@@ -61,6 +61,16 @@ EOF
         }
     }
 
+    # [SME: 12445] do not block Remote authorized access
+    # TO DO : allow pin point per service eg this UK ip/network even if UK is filtered
+
+    (($masq{XTAcceptValidRemoteHosts} || 'enabled') eq 'enabled'){
+        foreach (split /[,;]/, (${'httpd-admin'}{'ValidFrom'} || '')){
+          my ($ip,$bits) = Net::IPv4Addr::ipv4_parse("$_");
+          $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -s $ip/$bits -j RETURN\n" unless "$ip" eq '0.0.0.0';
+        }
+    } 
+
 	my @services = split(/,/, $masq{'XtServices'});
 	
 	foreach my $servName (@services) 

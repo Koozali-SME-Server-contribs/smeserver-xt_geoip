@@ -7,7 +7,7 @@ use esmith::Build::CreateLinks qw(:all);
 #--------------------------------------------------
 
 # links to add
-panel_link("xt_geoip","manager");
+panel_link("xtgeoip","manager");
 
 # templates to expand
 for my $event (qw(xt_geoip-modify xt_geoip-update xt_geoip-service 

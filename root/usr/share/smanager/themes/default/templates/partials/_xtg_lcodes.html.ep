@@ -2,7 +2,7 @@
 
     <HR class='sme-copyrightbar'>
 
-    %= form_for '/xt_geoip' => (method => 'POST') => begin
+    %= form_for '/xtgeoip' => (method => 'POST') => begin
 
     %= $c->render_to_string(inline => l('xtg_COUNTRY_LIST_DESCRIPTION'));
     %= submit_button l 'xtg_CNTRY_LIST', class => 'action'
@@ -11,4 +11,4 @@
     % end
 </div>
 
-<!-- button_to l('xtg_CNTRY_LIST') => "/xt_geoip" => (class => 'action') -->
+<!-- button_to l('xtg_CNTRY_LIST') => "/xgteoip" => (class => 'action') -->

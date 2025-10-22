@@ -4,7 +4,7 @@
     %= $c->render_to_string(inline => l('xtg_STATS_DESCRIPTION'));
     </h3>
 
-    %= form_for '/xt_geoip' => (method => 'POST') => begin
+    %= form_for '/xtgeoip' => (method => 'POST') => begin
 
     %= $c->render_to_string(inline => l('xtg_IPT_LIST_DESCRIPTION'));
       %= submit_button l 'xtg_IPT_LIST', class => 'action'
@@ -12,7 +12,7 @@
 
     % end
 
-    %= form_for '/xt_geoip' => (method => 'POST') => begin
+    %= form_for '/xtgeoip' => (method => 'POST') => begin
 
       %= $c->render_to_string(inline => l('xtg_SSH_LIST_DESCRIPTION'));
 
@@ -21,7 +21,7 @@
 
     % end
 
-    %= form_for '/xt_geoip' => (method => 'POST') => begin
+    %= form_for '/xtgeoip' => (method => 'POST') => begin
 
       %= $c->render_to_string(inline => l('xtg_F2B_LIST_DESCRIPTION'));
 

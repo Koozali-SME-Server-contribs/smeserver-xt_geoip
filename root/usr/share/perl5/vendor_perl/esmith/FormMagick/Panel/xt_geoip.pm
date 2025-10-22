@@ -4,7 +4,7 @@
 # Copyright (c) Michel Begue 2017
 # Xt_GeoIP Administration panel
 #-------------------------------------------
-package	esmith::FormMagick::Panel::xt_geoip;
+package esmith::FormMagick::Panel::xt_geoip;
 
 use strict;
 #use warnings;
@@ -95,8 +95,8 @@ sub new
         my $self = esmith::FormMagick->new();
         $self->{calling_package} = (caller)[0];
         bless $self;
-#	$self->debug(1);
-	return $self;
+#   $self->debug(1);
+    return $self;
 }
 
 =head2 get_prop
@@ -105,17 +105,17 @@ sub new
 
 sub get_prop
 {
-	my $fm = shift if (ref($_[0]) );
-	my $item = shift;
-	my $prop = shift;
-	
-	my $record = $db->get($item);
-	if ($record) {
-	    return $record->prop($prop);
-	}
-	else {
-	    return '';
-	}
+    my $fm = shift if (ref($_[0]) );
+    my $item = shift;
+    my $prop = shift;
+    
+    my $record = $db->get($item);
+    if ($record) {
+        return $record->prop($prop);
+    }
+    else {
+        return '';
+    }
 }
 
 =head2 get_value
@@ -124,16 +124,16 @@ sub get_prop
 
 sub get_value
 {
-	my $fm = shift;
-	my $item = shift;
-	my $record = $db->get($item);
-	#return ($db->get("masq")->prop($item));
-	if ($record) {
-	    return $record->value();
-	}
-	else {
-	    return '';
-	}
+    my $fm = shift;
+    my $item = shift;
+    my $record = $db->get($item);
+    #return ($db->get("masq")->prop($item));
+    if ($record) {
+        return $record->value();
+    }
+    else {
+        return '';
+    }
 }
     
 =head2 get_badcountries
@@ -171,7 +171,7 @@ sub get_reverse
     my $fm   = shift;
     my $item = shift;
     my $prop = shift;
-	$item = ($item eq 'masq') ? $item : $fm->cgi->param('name');  
+    $item = ($item eq 'masq') ? $item : $fm->cgi->param('name');  
         return $db->get_prop("$item", "$prop") || "disabled";
 }
 
@@ -183,16 +183,16 @@ method to retrieve the status of geoip (module and filtering) for the form
 
 sub get_stat_geoip
 {
-	my $fm = shift;
-	if ( system ( "/bin/test -f /lib/modules/`/bin/uname -r`/weak-updates/xtables-addons/xt_geoip.ko") != 0 ) {
-	    return $fm->localise('ERROR_MISSING_MODULE');
-	} elsif ( system ( "/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0 ) {
-	    return $fm->localise('ERROR_UNLOADED_MODULE');
-	} elsif ( get_geoip() eq 'enabled' && system ( "/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0 ) {
-	    return $fm->localise('ERROR_FILTER_CHAIN_MISSING');
-	} else {
-	    return '';
-	}
+    my $fm = shift;
+    if ( system ( "/bin/test -f /lib/modules/`/bin/uname -r`/weak-updates/xtables-addons/xt_geoip.ko") != 0 ) {
+        return $fm->localise('ERROR_MISSING_MODULE');
+    } elsif ( system ( "/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0 ) {
+        return $fm->localise('ERROR_UNLOADED_MODULE');
+    } elsif ( get_geoip() eq 'enabled' && system ( "/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0 ) {
+        return $fm->localise('ERROR_FILTER_CHAIN_MISSING');
+    } else {
+        return '';
+    }
 }
 
 
@@ -205,9 +205,9 @@ sub get_stat_license_key {
 
     my $fm = shift;
     if ((get_prop( 'geoip','status' ) || 'disabled') eq 'enabled' ) {
-	if ( (get_prop( 'geoip','LicenseKey' ) || '') ne '' ) {
-	    return '';
-	}
+    if ( (get_prop( 'geoip','LicenseKey' ) || '') ne '' ) {
+        return '';
+    }
     }
     return $fm->localise('ERROR_LICENSE_KEY');
 
@@ -231,38 +231,38 @@ Sub to change settings as per user input in the panel
 
 sub change_settings
 {
-	my $self = shift;
-	my $q = $self->{'cgi'};
-	
-	my $mq_bc = get_badcountries();
-	my $mq_gp = get_geoip();
-	my $masq = $db->get('masq') ||  "disabled";
-	my $mq_rv = $masq->prop('XTGeoipRev') || 'disabled';
-	my $mq_ot = $masq->prop('XTGeoipOther') || 'disabled';
+    my $self = shift;
+    my $q = $self->{'cgi'};
+    
+    my $mq_bc = get_badcountries();
+    my $mq_gp = get_geoip();
+    my $masq = $db->get('masq') ||  "disabled";
+    my $mq_rv = $masq->prop('XTGeoipRev') || 'disabled';
+    my $mq_ot = $masq->prop('XTGeoipOther') || 'disabled';
 
-	my $n_mq_bc = $q->param("masq_badcountries");
-	my $n_mq_gp = $q->param("masq_geoip") || $mq_gp;
-	my $n_upd_gp = $q->param("update_geoip") || '';
+    my $n_mq_bc = $q->param("masq_badcountries");
+    my $n_mq_gp = $q->param("masq_geoip") || $mq_gp;
+    my $n_upd_gp = $q->param("update_geoip") || '';
         my $n_mq_rv = $q->param("masq_reverse") || $mq_rv ;
-	my $n_mq_ot = $q->param("masq_others") || $mq_ot ;	
+    my $n_mq_ot = $q->param("masq_others") || $mq_ot ;  
 
-	if (($n_mq_bc eq $mq_bc) && ($n_mq_gp eq $mq_gp) && ($n_upd_gp eq 'NO') && ($n_mq_rv eq $mq_rv) && ($n_mq_ot eq $mq_ot)) {
-	    return $self->success("NO_CHANGE")
-	}
-	$db->set_prop("masq", "BadCountries", $n_mq_bc);
-	$db->set_prop("masq", "GeoIP", $n_mq_gp);
-    	$db->set_prop("masq", "XTGeoipRev", $n_mq_rv);
-	$db->set_prop("masq", "XTGeoipOther", $n_mq_ot);
+    if (($n_mq_bc eq $mq_bc) && ($n_mq_gp eq $mq_gp) && ($n_upd_gp eq 'NO') && ($n_mq_rv eq $mq_rv) && ($n_mq_ot eq $mq_ot)) {
+        return $self->success("NO_CHANGE")
+    }
+    $db->set_prop("masq", "BadCountries", $n_mq_bc);
+    $db->set_prop("masq", "GeoIP", $n_mq_gp);
+        $db->set_prop("masq", "XTGeoipRev", $n_mq_rv);
+    $db->set_prop("masq", "XTGeoipOther", $n_mq_ot);
 
-	my $eventloc = "xt_geoip-modify";
-	$eventloc = "xt_geoip-update" if $n_upd_gp eq 'YES';
-	
+    my $eventloc = "xt_geoip-modify";
+    $eventloc = "xt_geoip-update" if $n_upd_gp eq 'YES';
+    
         unless ( system ( "/sbin/e-smith/signal-event",  $eventloc ) == 0 )
-	{
-	    $self->error("ERROR_UPDATING");
-	    return undef;
+    {
+        $self->error("ERROR_UPDATING");
+        return undef;
         }
-	return $self->success("SUCCESS");
+    return $self->success("SUCCESS");
 }
 
 
@@ -278,14 +278,14 @@ sub must_exist
     my $listerr = "";
     my @mq_bcs = split /[,:]/, $q->param("masq_badcountries");
     if (@mq_bcs) {
-	my $ctr = @mq_bcs;
-	return $self->localise('ERROR_COUNTRY_MAX: {$ctr}', {ctr=> "$ctr"}) if ($ctr > 50);
+    my $ctr = @mq_bcs;
+    return $self->localise('ERROR_COUNTRY_MAX: {$ctr}', {ctr=> "$ctr"}) if ($ctr > 50);
 
-	foreach my $bcs (@mq_bcs) {
-	    my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
-	    if (! -f $file)  { $listerr .= $bcs . ","; }
-	}
-	return $self->localise('ERR_COUNTRY_NOT_EXIST: {$listerr}', {listerr=> "$listerr"}) if $listerr;
+    foreach my $bcs (@mq_bcs) {
+        my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
+        if (! -f $file)  { $listerr .= $bcs . ","; }
+    }
+    return $self->localise('ERR_COUNTRY_NOT_EXIST: {$listerr}', {listerr=> "$listerr"}) if $listerr;
     }
     return 'OK';
 }
@@ -305,41 +305,41 @@ sub print_custom_button
 #Subroutine to list statistics
 sub generateStats
 {
-	my $self = shift;
-	my $q = $self->{cgi};
+    my $self = shift;
+    my $q = $self->{cgi};
 
-	$self->turn_off_buttons();
+    $self->turn_off_buttons();
 
         # Untaint $name before use in system()
-	my $stats_type = $q->param ('type');
+    my $stats_type = $q->param ('type');
         $stats_type =~ /(.+)/; $stats_type = $1;
-	if ($stats_type ne "ipt" && $stats_type ne "ssh" && $stats_type ne "f2b")
-	{
-		print $q->p($q->b($self->localise('INVALID_STATS_TYPE')." ".
-			$stats_type));
-		return '';
-	} else 	{
-	# my $now_string = $self->gen_locale_date_string();
-	my $file = "/var/lib/xt_geoip/extA_" . $stats_type . "_country.lst";
-	my $filetime = ( -e $file ) ? (stat($file))[9]  : 0;
-	my $date_string = strftime("%Y/%m/%d %H:%M", localtime( $filetime )) || '';
-	print $q->h3($self->localise('STATS_GENERATED'), "[", $stats_type, "]", $date_string);
+    if ($stats_type ne "ipt" && $stats_type ne "ssh" && $stats_type ne "f2b")
+    {
+        print $q->p($q->b($self->localise('INVALID_STATS_TYPE')." ".
+            $stats_type));
+        return '';
+    } else  {
+    # my $now_string = $self->gen_locale_date_string();
+    my $file = "/var/lib/xt_geoip/extA_" . $stats_type . "_country.lst";
+    my $filetime = ( -e $file ) ? (stat($file))[9]  : 0;
+    my $date_string = strftime("%Y/%m/%d %H:%M", localtime( $filetime )) || '';
+    print $q->h3($self->localise('STATS_GENERATED'), "[", $stats_type, "]", $date_string);
 
-	open( XTGEOIPSTATS, $file );
-	print "<pre>\n";
+    open( XTGEOIPSTATS, $file );
+    print "<pre>\n";
 
-	while (<XTGEOIPSTATS>)
-	{
-		print;
-	}
+    while (<XTGEOIPSTATS>)
+    {
+        print;
+    }
 
-	close XTGEOIPSTATS;
-	print "</pre>\n";
+    close XTGEOIPSTATS;
+    print "</pre>\n";
 
-	print $q->h3($self->localise('END_OF_STATS'));
-	#$self->wherenext('First');
-	return '';
-	}
+    print $q->h3($self->localise('END_OF_STATS'));
+    #$self->wherenext('First');
+    return '';
+    }
 }
 
 sub get_srv_name
@@ -363,10 +363,10 @@ sub print_service_table {
     my $self = shift;
     my $q = $self->{cgi};
     my $servname        = $self->localise('NAME');
-    my $port 	= $self->localise('PORT');
-    my $status 	= $self->localise('STATUS');
-    my $access 	= $self->localise('ACCESS');
-    my $servBC 	= $self->localise('BADCOUNTRIES');
+    my $port    = $self->localise('PORT');
+    my $status  = $self->localise('STATUS');
+    my $access  = $self->localise('ACCESS');
+    my $servBC  = $self->localise('BADCOUNTRIES');
     my $modify      = $self->localise('MODIFY');
     my $remove      = $self->localise('REMOVE');
     my $action_h    = $self->localise('ACTION');
@@ -393,30 +393,30 @@ sub print_service_table {
 
     foreach my $servname (@services) 
     {
-	my $i = $db->get($servname);
-	next if not defined $i;
+    my $i = $db->get($servname);
+    next if not defined $i;
 
         my $port = $i->prop('TCPPort');
         my $status = $i->prop('status');
         my $access = $i->prop('access');
         my $servBC = $i->prop('BadCountries') || ' ';
-	my $servRev = (( $i->prop('XTGeoipRev')|| 'disabled') eq 'disabled' )? '==': '!=';
+    my $servRev = (( $i->prop('XTGeoipRev')|| 'disabled') eq 'disabled' )? '==': '!=';
 
         my $params = $self->build_serv_cgi_params($servname, $i->props());
 
         my $href = "$scriptname?$params&action=modify&wherenext=";
 
         my $actionModify = '&nbsp;';
-	$actionModify .= $q->a({href => "${href}SrvModify"},$modify)
-		  . '&nbsp;';
+    $actionModify .= $q->a({href => "${href}SrvModify"},$modify)
+          . '&nbsp;';
 
         my $actionRemove = '&nbsp;';
             $actionRemove .= $q->a({href => "${href}SrvRemove"}, $remove) 
                   . '&nbsp';
 
-	my $color = 'red';
- 	my $deco= "none";
-	if ($servRev eq '!=' ) { $color = 'green'; }
+    my $color = 'red';
+    my $deco= "none";
+    if ($servRev eq '!=' ) { $color = 'green'; }
         if ($status eq 'disabled' || $access ne 'public') { $color = 'grey'; $deco= "line-through"; }
         print $q->Tr (
             esmith::cgi::genSmallCell($q, $servname,"normal"),
@@ -449,9 +449,9 @@ sub remove_serv {
     my ($self) = @_;
     my $name = $self->cgi->param('name');
     if (my $serv = $db->get($name)) {
-	my $servBC = $serv->prop('BadCountries') || '';
+    my $servBC = $serv->prop('BadCountries') || '';
         if ($servBC ne '') {
-	    my $tps = $db->set_prop_and_delete($name, "BadCountries");
+        my $tps = $db->set_prop_and_delete($name, "BadCountries");
             $tps = $db->get_prop_and_delete($name, "XTGeoipRev");
             # Untaint $name before use in system()
             # $name =~ /(.+)/; $name = $1;
@@ -475,24 +475,24 @@ sub modify_serv {
     my ($self) = @_;
     my $name = $self->cgi->param('name');
     if (my $serv = $db->get($name)) {
-	my $servBC = $serv->prop('BadCountries') || '';
+    my $servBC = $serv->prop('BadCountries') || '';
         my $servRev = $serv->prop('XTGeoipRev') || 'disabled';
 
-	my $q = $self->{'cgi'};
-	my $n_servBC = $q->param("masq_srv_badcountries");
-	my $n_servRev = $q->param("masq_srv_reverse") || $servRev;
+    my $q = $self->{'cgi'};
+    my $n_servBC = $q->param("masq_srv_badcountries");
+    my $n_servRev = $q->param("masq_srv_reverse") || $servRev;
 
-	if ($n_servBC eq $servBC && $n_servRev eq  $servRev ) {
-	    return $self->success("NO_CHANGE")
-	}
-	$db->set_prop($name, "BadCountries", $n_servBC);
-	$db->set_prop($name, "XTGeoipRev", $n_servRev);
+    if ($n_servBC eq $servBC && $n_servRev eq  $servRev ) {
+        return $self->success("NO_CHANGE")
+    }
+    $db->set_prop($name, "BadCountries", $n_servBC);
+    $db->set_prop($name, "XTGeoipRev", $n_servRev);
 
         if (system ( "/sbin/e-smith/signal-event",  "xt_geoip-service" ) == 0 )
-	{
-	    return $self->success("SUCCESS");
+    {
+        return $self->success("SUCCESS");
         } else {
-	    return $self->error("ERROR_UPDATING");
+        return $self->error("ERROR_UPDATING");
         }
     } else {    
         $self->error('CANT_FIND_SERV');
@@ -507,14 +507,14 @@ sub srv_must_exist
     my $listerr = "";
     my @mq_bcs = split /[,:]/, $q->param("masq_srv_badcountries");
     if (@mq_bcs) {
-	my $ctr = @mq_bcs;
-	return $self->localise('ERROR_COUNTRY_MAX: {$ctr}', {ctr=> "$ctr"}) if ($ctr > 50);
+    my $ctr = @mq_bcs;
+    return $self->localise('ERROR_COUNTRY_MAX: {$ctr}', {ctr=> "$ctr"}) if ($ctr > 50);
 
-	foreach my $bcs (@mq_bcs) {
-	    my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
-	    if (! -f $file)  { $listerr .= $bcs . ","; }
-	}
-	return $self->localise('ERR_COUNTRY_NOT_EXIST: {$listerr}', {listerr=> "$listerr"}) if $listerr;
+    foreach my $bcs (@mq_bcs) {
+        my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
+        if (! -f $file)  { $listerr .= $bcs . ","; }
+    }
+    return $self->localise('ERR_COUNTRY_NOT_EXIST: {$listerr}', {listerr=> "$listerr"}) if $listerr;
     }
     return 'OK';
 }
@@ -523,32 +523,32 @@ sub srv_must_exist
 #Subroutine to list counries codes
 sub generateCodes
 {
-	my $self = shift;
-	my $q = $self->{cgi};
+    my $self = shift;
+    my $q = $self->{cgi};
 
-	$self->turn_off_buttons();
+    $self->turn_off_buttons();
 
-	my $file = "/usr/share/xt_geoip/geoip_countries_list.txt";
-	unless ( -e $file ) {
-	    print $q->p($q->b($self->localise('INVALID_CODES_LIST')));
-	    return '';
-	}
+    my $file = "/usr/share/xt_geoip/geoip_countries_list.txt";
+    unless ( -e $file ) {
+        print $q->p($q->b($self->localise('INVALID_CODES_LIST')));
+        return '';
+    }
 
-	print $q->h3($self->localise('COUNTRY_LIST'));
+    print $q->h3($self->localise('COUNTRY_LIST'));
 
-	open( XTGEOIPCODES, $file );
-	print "<pre>\n";
+    open( XTGEOIPCODES, $file );
+    print "<pre>\n";
 
-	while (<XTGEOIPCODES>)
-	{
-		print;
-	}
+    while (<XTGEOIPCODES>)
+    {
+        print;
+    }
 
-	close XTGEOIPCODES;
-	print "</pre>\n";
+    close XTGEOIPCODES;
+    print "</pre>\n";
 
-	print $q->h3($self->localise('END_OF_CODES'));
-	return '';
+    print $q->h3($self->localise('END_OF_CODES'));
+    return '';
 
 }
 
@@ -556,24 +556,24 @@ sub generateCodes
 #Subroutine to list other services codes
 sub otherServices
 {
-	my ($self, $choice) = @_;
+    my ($self, $choice) = @_;
 
-	my %serv_ok = map { $_ => 1} split(/,/, $db->get_prop("masq", "XtServices"));
-	# unless $choice eq 'all';
+    my %serv_ok = map { $_ => 1} split(/,/, $db->get_prop("masq", "XtServices"));
+    # unless $choice eq 'all';
 
-	my @serv_others = ();
-	
+    my @serv_others = ();
+    
         for ($db->get_all_by_prop(type => 'service'))
         {
-    	    next unless $_->prop('TCPPort');
-    	#    if ( $_->prop('TCPPort')) {
+            next unless $_->prop('TCPPort');
+        #    if ( $_->prop('TCPPort')) {
 
-    	#	push @serv_others, $_->key unless exists( $serv_ok{$_->key});
-	    push @serv_others, $_->key unless $choice eq 'sel' and not exists( $serv_ok{$_->key});
-    	#    }
-	}
+        #   push @serv_others, $_->key unless exists( $serv_ok{$_->key});
+        push @serv_others, $_->key unless $choice eq 'sel' and not exists( $serv_ok{$_->key});
+        #    }
+    }
 
-	return \@serv_others;
+    return \@serv_others;
 
 }
 

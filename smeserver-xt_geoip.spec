@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 28
+%define release 29
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -78,6 +78,11 @@ rm -rf %{name}-%{version}
 
 
 %changelog
+* Tue Oct 21 2025 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-29.sme 
+- Fix SmartMatch errors [SME: 13240]
+- Fix panel errors [SME: 13173]
+- Do not block remote access authorized [SME: 12445]
+
 * Tue Oct 07 2025 Brian Read <brianr@koozali.org> 1.3.1-28.sme
 - Add UTF8 and avoid potential DB caching problems [SME: 13209]
 
