@@ -1,0 +1,44 @@
+% layout 'default', title => "Smanager - xtgeoip";
+
+% content_for 'module' => begin
+
+<div id="module" class="module xt_geoip-panel">
+
+    %if (config->{debug} == 1) {
+    <p>
+    %= dumper $c->current_route
+    %= dumper $xtg_datas
+    </p>
+    %}
+
+    % if ( stash 'error' ) {
+        <br><div class=sme-error>
+        %= $c->render_to_string(inline => stash 'error') 
+    </div>
+    %}
+
+    <h1><%= $title %></h1>
+
+    <br>
+    %= $c->render_to_string(inline => l('xtg_DESC_AVAILABLE_SERVICES'));
+    <br>
+
+  %= form_for '/xtgeoipb' => (method => 'POST') => begin
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_AVAILABLE_SERVICES'
+    </span><span class=data>
+    % param 'Selectedservices' => $c->otherServices('sel') unless param 'Selectedservices';
+    %= select_field 'Selectedservices' => $c->otherServices('all'), class => 'input', multiple => "1"
+    </span></p>
+
+    %= hidden_field 'Choice' => 'LSRV'
+    <div class='center'>
+    %= submit_button l('NEXT'), class => 'action'
+    </div>
+
+  %end
+
+</div>
+
+%end

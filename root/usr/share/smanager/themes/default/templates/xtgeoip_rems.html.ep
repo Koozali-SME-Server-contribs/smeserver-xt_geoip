@@ -1,0 +1,53 @@
+% layout 'default', title => "Smanager - xtgeoip";
+
+% content_for 'module' => begin
+
+<div id="module" class="module xt_geoip-panel">
+
+    %if (config->{debug} == 1) {
+    <p>
+    %= dumper $c->current_route
+    %= dumper $xtg_datas
+    </p>
+    %}
+
+    % if ( stash 'error' ) {
+        <br><div class=sme-error>
+        %= $c->render_to_string(inline => stash 'error') 
+    </div>
+    %}
+
+    <h1><%= $title %></h1>
+
+    <h2>
+    %= l 'xtg_REMOVE_SERVICE'
+    </h2><br>
+
+    %= $c->render_to_string(inline => l('xtg_REMOVE_DESC'));
+
+  %= form_for '/xtgeoipb' => (method => 'POST') => begin
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_SERVICE'
+    </span><span class=data>
+    %= $xtg_datas->{name}
+    </span></p>
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_SERV_BADCOUNTRIES_STATUS'
+    </span><span class=data>
+    %= $c->get_srv_badcountries( $xtg_datas->{name}, 0 )
+    </span></p>
+
+    <div class='center'>
+    %= submit_button l('REMOVE'), class => 'action'
+    </div>
+
+    %= hidden_field 'Choice' => 'REMS'
+    %= hidden_field 'Name' => $xtg_datas->{name}
+
+  %end
+
+</div>
+
+%end

@@ -1,0 +1,74 @@
+% layout 'default', title => "Smanager - xtgeoip";
+
+% content_for 'module' => begin
+
+<div id="module" class="module xt_geoip-panel">
+
+    %if (config->{debug} == 1) {
+    <p>
+    %= dumper $c->current_route
+    %= dumper $xtg_datas
+    </p>
+    %}
+
+    % if ( stash 'error' ) {
+        <br><div class=sme-error>
+        %= $c->render_to_string(inline => stash 'error')
+    </div>
+    %}
+
+    <h1><%= $title %></h1>
+
+    <br>
+    %= $c->render_to_string(inline => l('xtg_XT_GEOIP_STATUS_DESCRIPTION'));
+    <br>
+
+  %= form_for '/xtgeoip' => (method => 'POST') => begin
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_GEOIP_STATUS'
+    </span><span class=input>
+    %= $c->get_geoip()
+    </span></p>
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_BADCOUNTRIES_STATUS'
+    </span><span class=input>
+    %= $c->get_badcountries(1)
+    </span></p>
+
+    <p><span class=label>
+    %=l 'xtg_LABEL_DATE_UPDATE_STATUS'
+    </span><span class=input>
+    %= $c->get_date_update()
+    </span></p>
+
+    % if ( my $st_geoip = $c->get_stat_geoip() ) {
+      <div class=sme-error>
+      %= $c->render_to_string(inline => $st_geoip);
+      </div>
+    %}
+
+    % if ( my $st_lice_k = $c->get_stat_license_key() ) {
+      <div class=sme-error>
+      %= $c->render_to_string(inline => $st_lice_k);
+      </div>
+    %}
+
+    %= hidden_field 'Choice' => 'UPDT'
+
+    <div class='center'>
+    %= submit_button l('NEXT'), class => 'action'
+    </div>
+
+  %end
+
+  %= include 'partials/_xtg_lcodes'
+
+  %= include 'partials/_xtg_services'
+
+  %= include 'partials/_xtg_stats'
+
+</div>
+
+%end

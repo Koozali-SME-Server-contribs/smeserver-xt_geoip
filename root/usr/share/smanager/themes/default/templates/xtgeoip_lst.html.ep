@@ -1,0 +1,36 @@
+% layout 'default', title => "Smanager - xtgeoip - List";
+
+% content_for 'module' => begin
+
+<div id="module" class="module xt_geoip-panel">
+
+    %if (config->{debug} == 1) {
+    <p>
+    %= dumper $c->current_route
+    %= dumper $xtg_datas
+    </p>
+    %}
+
+    % if ( stash 'error' ) {
+        <br><div class=sme-error>
+        %= $c->render_to_string(inline => stash 'error')
+    </div>
+    %}
+
+    <h1><%= $title %></h1>
+
+  %= form_for '/xtgeoip' => (method => 'GET') => begin
+
+    <br>
+    %= $c->render_to_string(inline => stash 'modul');
+    <br>
+
+    <div class='center'>
+    %= submit_button l('NEXT'), class => 'action'
+    </div>
+
+  %end
+
+</div>
+
+%end
