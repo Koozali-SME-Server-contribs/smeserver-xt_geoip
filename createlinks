@@ -37,7 +37,7 @@ for my $event (qw(xt_geoip-update bootstrap-console-save
 {
     event_link("smeserver-xt_geoip-download-action", $event, "10");
 }
-for my $event (qw(bootstrap-console-save e-smith-packetfilter-update
+for my $event (qw(bootstrap-console-save smeserver-packetfilter-update
         smeserver-xt_geoip-update remoteaccess-update))
 {
     event_link("xt_geoip_kmod", $event, "15");
