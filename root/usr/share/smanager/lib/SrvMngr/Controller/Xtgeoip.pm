@@ -1,1026 +1,501 @@
-# SrvMngr: a web-based Sme Koozali server administration GUI
-package SrvMngr;
+package SrvMngr::Controller::Xtgeoip;
 
+#----------------------------------------------------------------------
+# heading     : Network
+# description : GeoIP IP filtering
+# navigation  : 6000 610
+# name : xtgeoip,   method : get,  url : /xtgeoip,  ctlact : xtgeoip#main
+# name : xtgeoipd,  method : post, url : /xtgeoip,  ctlact : xtgeoip#do_display
+# name : xtgeoipc,  method : get,  url : /xtgeoipb, ctlact : xtgeoip#do_display
+# name : xtgeoipu,  method : post, url : /xtgeoipb, ctlact : xtgeoip#do_action
+#
+# routes : end
+#----------------------------------------------------------------------
 use strict;
 use warnings;
-use utf8;
-binmode(STDOUT);
-
-use Mojo::Base 'Mojolicious';
-
-use File::Spec;
-use File::Spec::Functions qw( rel2abs catdir );
-use Cwd;
-use Net::Netmask;
-
-use Mojo::File qw( path );
-use Mojo::Home;
-
-use DBM::Deep;
-use Mojo::JWT;
+use Mojo::Base 'Mojolicious::Controller';
 use POSIX qw(strftime);
-
-use Mojolicious::Plugin::Config;
-#use Mojolicious::Plugin::I18N;
-
-use SrvMngr::Plugin::I18N;
+use Locale::gettext;
 use SrvMngr::I18N;
-use SrvMngr::Model::Main;
-
-use SrvMngr::Plugin::WithoutCache;
-
-use esmith::I18N;
+use SrvMngr qw( theme_list init_session );
+use esmith::util;
 use esmith::ConfigDB::UTF8;
-use esmith::NavigationDB; # no UTF8 raw is ok for ASCII only flat file
 
-# Import the function(s) you need
-use SrvMngr_Auth qw(check_admin_access);
+our ($cdb);
+#our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+#my ($cdb);
 
-#this is overwrittrn with the "release" by the spec file - release can be "99.el8.sme"
-our $VERSION = '121.el8.sme';
-#Extract the release value
-if ($VERSION =~ /^(\d+)/) {
-    $VERSION = $1;  # $1 contains the matched numeric digits
-} else {
-    $VERSION = '999' #No leading numeric digits found
-}
-$VERSION = eval $VERSION;
-
-use Exporter 'import';
-our @EXPORT_OK = qw(
-    init_session get_mod_url theme_list
-    getNavigation ip_number validate_password is_normal_password email_simple
-    mac_address_or_blank mac_address ip_number_or_blank
-    lang_space get_routes_list subnet_mask get_reg_mask
-    gen_locale_date_string get_public_ip_address simpleNavMerge
-    );
-
-has home => sub {
-    my $path = $ENV{SRVMNGR_HOME} || getcwd;
-    return Mojo::Home->new(File::Spec->rel2abs($path));
-};
-
-has config_file => sub {
-    my $self = shift;
-    return $ENV{SRVMNGR_CONFIG} if $ENV{SRVMNGR_CONFIG};
-    return $self->home->rel_file('conf/srvmngr.conf');
-};
-
-has data_dir => sub {
-    my $self = shift;
-    return $ENV{SRVMNGR_DATA} if $ENV{SRVMNGR_DATA};
-    return $self->home->rel_file('data');
-};
-
-has temp_dir => sub {
-    my $self = shift;
-    return $ENV{SRVMNGR_TEMP} if $ENV{SRVMNGR_TEMP};
-    return $self->home->rel_file('temp');
-};
-
-has conf_dir => sub{
-    my $self = shift;
-    return $ENV{SRVMNGR_CONF} if $ENV{SRVMNGR_CONF};
-    return $self->home->rel_file('conf');
-};
-
-
-sub startup {
-
-    my $self = shift;
-
-    $self->plugin( Config => { file => $self->config_file()} );
-
-    $self->mode( $self->config->{mode} || 'production' );   #'development'
-
-    $ENV{'MOJO_SMANAGER_DEBUG'} = $self->config->{debug} || 0;
-
-    $self->setup_plugins;
-
-    $self->setup_helpers;
-
-    $self->setup_paths;
-
-    $self->setup_sessions;
-
-    $self->setup_routing;
-
-    $self->setup_hooks;
-
-    # no data in cache
-    $self->renderer->cache->max_keys(0);
-
-}
-
-
-sub setup_sessions {
-
-    my $self = shift;
-
-    # Setup signed sessions
-    $self->app->secrets( $self->config->{secrets} );
-    $self->sessions->cookie_name('smanager');
-    $self->sessions->default_expiration( $self->config->{timeout} );
-    $self->sessions->secure( 1 );
-
-}
-
-
-sub setup_paths {
-
-    my $self = shift;
-
-    # Replace the default paths
-    $self->renderer->paths([$self->home->rel_file('themes/default/templates')]);
-    $self->static->paths([$self->home->rel_file('themes/default/public')]);
-
-    my $theme = $self->config->{theme} || 'default';
-    if ( $theme ne 'default' ) {
-    # Put the new theme first
-    my $t_path = $self->home->rel_file('themes/'.$theme);
-    unshift @{$self->renderer->paths}, $t_path.'/templates' if -d $t_path.'/templates';
-    unshift @{$self->static->paths},   $t_path.'/public' if -d $t_path.'/public';
-    }
-
-}
-
-
-sub setup_helpers {
-
-    my $self = shift;
-
-    $self->helper(log_req => sub {
-    my $c  = shift;
-        my $mess = shift || '';
-        my $method = $c->req->method;
-        my $url = $c->req->url;
-        my $version = $c->req->version;
-        my $ip    = $c->tx->remote_address;
-        return "Request received => $method $url HTTP/$version from $ip : $mess ";
-    });
-
-    $self->helper( 'home_page' => sub{ '/initial' } );
-
-    $self->helper( 'auth_fail' => sub {
-    my $self = shift;
-    my $message = shift || $self->l('acs_NO');
-        $self->flash( error => $message );
-        $self->redirect_to( $self->home_page, status => 403 );
-        return 0;
-    });
-
-    $self->helper( 'is_admin' => sub {
-    my $self = shift;
-        if ( defined $self->session->{username} &&  defined $self->session->{is_admin} ) {
-            return $self->session->{is_admin};
-        }
-        return undef;
-    });
-
-    $self->helper( 'is_unsafe' => sub {
-    return SrvMngr::Model::Main->reconf_needed();
-    });
-
-    $self->helper( 'is_logged_in' => sub {
-    my $self = shift;
-        if ( defined $self->session->{logged_in} ) {
-        return 1 if ( $self->session('logged_in') == 1 );
-    }
-    return undef;
-    });
-
-    $self->helper(lang_space    => \&_lang_space);
-
-    $self->plugin( Config => { file => $self->config_file()} );
-
-    $self->helper( send_email => sub {
-    my ($c, $address, $subject, $body) = @_;
-
-    if (not defined $body) {
-        warn "send_email: Need 3 parameters (Address, Subject, Body)\n";
-        return;
-    }
-
-    my $rcfile = $c->app->conf_dir().'/admin_muttrc';
-
-    #warn "send_email: $rcfile * $address\n";   #$rcfile $subject $address\n";
-    system( "/bin/echo \"$body\" | /usr/bin/mutt -F $rcfile -s \"$subject\" \"$address\"" ) == 0
-        or warn "error sendmail:  $address \n"; # $subject";
-    });
-
-    $self->helper( pwdrst => sub {
+sub main {
     my $c = shift;
-    my $file = $c->app->data_dir().'/pwdrst.db';
-    state $db = DBM::Deep->new($file);
-    });
+    $c->app->log->info($c->log_req);
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $title = $c->render_to_string(inline => ($c->l('xtg_FORM_TITLE')));
+    my %xtg_datas = ();
+    $xtg_datas{'choice'} = '';
+    $c->stash(title => $title, xtg_datas => \%xtg_datas);
+    $c->render('xtgeoip');
+} ## end sub main
 
-    $self->helper( jwt => sub {
-    Mojo::JWT->new(secret => shift->app->secrets->[0] || die)
-    });
+sub do_display {
+    my $c = shift;
+    $c->app->log->info($c->log_req);
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $title = $c->render_to_string(inline => ($c->l('xtg_FORM_TITLE')));
+    my $choice = $c->param('Choice');
+    my $result;
+    my %xtg_datas = ();
+    $xtg_datas{'choice'} = $choice;
 
-    $self->helper( selected_field => sub {
-                    my $self = shift;
-                    my @options = shift;
-                    my $selected = shift;
-                    my $count = 0;
-                    # search for occurence of value $selected in arrays; if found add selected => 'selected'
-                    for  (my $i = 0; $i <= $#{$options[0]} ; $i++){
-                      if (grep /^$selected$/,  @{$options[0][$i]}) {
-                        push( @{$options[0][$i]} ,'selected', 'selected' );
-                        $count++;last;
-                      }
-                    }
-                    push ( @{$options[0]} ,[ ucfirst( $selected), $selected, 'selected', 'selected'] ) if ($count <1);
-                    return @options;
-    });
+    if ($choice eq 'LCOD') {
+        $result = $c->generateCodes();
 
-}
+        #        $c->stash( title => $title, modul => $result, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_lst');
+    } ## end if ($choice eq 'LCOD')
 
+    if ($choice eq 'LF2B') {
+        $result = $c->generateStats('f2b');
 
-sub setup_plugins {
+        #        $result = $c->render_to_string(inline => generateStats($c, 'f2b'));
+        #        $c->stash( title => $title, modul => $result, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_lst');
+    } ## end if ($choice eq 'LF2B')
 
-    my $self = shift;
+    if ($choice eq 'LSSH') {
+        $result = $c->generateStats('ssh');
 
-    $self->plugin('TagHelpers');
+        #        $result = $c->render_to_string(inline => generateStats($c, 'ssh'));
+        #        $c->stash( title => $title, modul => $result, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_lst');
+    } ## end if ($choice eq 'LSSH')
 
-    $self->plugin('RenderFile');
+    if ($choice eq 'LIPT') {
+        $result = $c->generateStats('ipt');
 
-    $self->plugin('SrvMngr::Plugin::WithoutCache');
+        #        $c->stash( title => $title, modul => $result, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_lst');
+    } ## end if ($choice eq 'LIPT')
 
-    # CSRF protection if production mode
-#    $self->plugin('Mojolicious::Plugin::CSRFDefender' => {
-#   Adapted plugin for use with GET method
-    #$self->plugin('SrvMngr::Plugin::CSRFDefender' => {
-    #onetime => 1,
-    #error_status => 400,
-    #error_content => 'Error: CSRF token is invalid or outdated'
-        #error_template => 'csrf_400'
-    #}) if ( $self->mode eq 'production' );
+    if ($choice eq 'LSRV') {
 
-    $self->plugin('SrvMngr::Plugin::I18N' => {namespace => 'SrvMngr::I18N', default => 'en'});
+        #        $c->stash( title => $title, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_lsrv');
+    } ## end if ($choice eq 'LSRV')
 
-#    $self->plugin('Mojolicious::Plugin::FrozenSessions' => {});
+    if ($choice eq 'UPDT') {
 
-    $self->helper(log_req => sub {
+        #        $c->stash( title => $title, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_updt');
+    } ## end if ($choice eq 'UPDT')
 
-    my $c  = shift;
-        my $mess = shift || '';
+    if ($choice eq 'UPDS') {
+        $xtg_datas{name} = $c->param('Name');
 
-        my $method = $c->req->method;
-        my $url = $c->req->url;
-        my $version = $c->req->version;
-        my $ip    = $c->tx->remote_address;
+        #        $c->stash( title => $title, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_upds');
+    } ## end if ($choice eq 'UPDS')
 
-        return "Request received => $method $url HTTP/$version from $ip: $mess ";
-    });
-}
+    if ($choice eq 'REMS') {
+        $xtg_datas{name} = $c->param('Name');
 
+        #        $c->stash( title => $title, xtg_datas => \%xtg_datas );
+        #        return $c->render('xtgeoip_rems');
+    } ## end if ($choice eq 'REMS')
+    $c->stash(title => $title, modul => $result, xtg_datas => \%xtg_datas);
 
-sub setup_routing {
+    my @geoip_list1 = ('LCOD', 'LF2B', 'LSSH', 'LIPT');
+    my @geoip_list2 = ('UPDT', 'UPDS', 'REMS', 'LSRV');
 
-    my $self = shift;
-    my $r = $self->app->routes;
-    $r->namespaces(['SrvMngr::Controller']);
+    return $c->render('xtgeoip_lst')                 if ( grep ( /^$choice$/,@geoip_list1) );
+    return $c->render('xtgeoip' . '_' . lc($choice)) if ( grep ( /^$choice$/,@geoip_list2) );
+    $c->redirect_to('/xtgeoip');
+} ## end sub do_display
 
-    $r->get('/')->to('initial#main')->name('initial');
-    $r->get('/initial')->to('initial#main')->name('initial');
-    $r->get('/login')->to('login#main')->name('login');
-    $r->post('/login')->to('login#login')->name('signin');
-    $r->get('/manual')->to('manual#main')->name('manual');
-    $r->get('/support')->to('support#main')->name('support');
+sub do_action {
+    my $c = shift;
+    $c->app->log->info($c->log_req);
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $rt        = $c->current_route;
+    my $title     = $c->render_to_string(inline => ($c->l('xtg_FORM_TITLE')));
+    my %xtg_datas = ();
+    my $choice    = $c->param('Choice');
+    $xtg_datas{'choice'} = $choice;
+    my ($res, $result) = '';
 
-    # Password reset allowed for this server
-    if ( ( $self->config->{pwdreset} || '0') == 1 ) {
-    $r->get('/login2')->to('login#pwdrescue')->name('pwdresc');
-    $r->get('/loginc')->to('login#confpwd')->name('resetpwdconf');
-        $r->get('/userpasswordr')->to('userpassword#main')->name('upwdreset');
-        $r->post('/userpasswordr')->to('userpassword#change_password')->name('upwdreset2');
+    if ($choice eq 'LSRV') {
+
+        #$result .= 'Blocked for testing ! Avoid updates for now ';
+        $res = '';
+
+        if (!$result) {
+            $res = $c->do_otherServices();
+            $result .= $res unless $res eq 'OK';
+
+            if (!$result) {
+                $result = $c->l('xtg_SERVICE_SUCCESS');
+            }
+        } ## end if (!$result)
+    } ## end if ($choice eq 'LSRV')
+
+    if ($choice eq 'UPDT') {
+        $res = $c->must_exist();
+        $result .= $res unless $res eq 'OK';
+
+        #$result .= 'Blocked for testing ! Avoid updates for now ';
+        $res = '';
+
+        if (!$result) {
+            $res = $c->change_settings();
+            $result .= $res unless $res eq 'OK';
+
+            if (!$result) {
+                $result = $c->l('xtg_SUCCESS');
+            }
+        } ## end if (!$result)
+    } ## end if ($choice eq 'UPDT')
+
+    if ($choice eq 'REMS') {
+
+        #$result .= 'Blocked for testing ! Avoid updates for now ';
+        my $name = $c->param('Name');
+        $xtg_datas{name} = $name;
+        $res = '';
+
+        if (!$result) {
+            $res = $c->remove_serv();
+            $result .= $res unless $res eq 'OK';
+
+            if (!$result) {
+                $result = $c->l('xtg_SUCCESSFULLY_DELETED_SERVICE');
+            }
+        } ## end if (!$result)
+    } ## end if ($choice eq 'REMS')
+
+    if ($choice eq 'UPDS') {
+
+        #$result .= 'Blocked for testing ! Avoid updates for now ';
+        my $name = $c->param('Name');
+        $xtg_datas{name} = $name;
+        $res = '';
+
+        if (!$result) {
+            $res = $c->modify_serv();
+            $result .= $res unless $res eq 'OK';
+
+            if (!$result) {
+                $result = $c->l('xtg_SERVICE_SUCCESS');
+            }
+        } ## end if (!$result)
+    } ## end if ($choice eq 'UPDS')
+
+    # common parts
+    if ($res ne 'OK') {
+        $c->stash(error => $result);
+        $c->stash(title => $title, xtg_datas => \%xtg_datas);
+        return $c->render('xtgeoip' . '_' . lc($choice));
     }
+    my $message = "xtgeoip updates $choice DONE";
+    $c->app->log->info($message);
+    $c->flash(success => $result);
+##    $c->flash( error => 'No changes applied !!' );
+    #return to 'xtgeoip' route !!!
+    $c->redirect_to('/xtgeoip');
+} ## end sub do_action
 
-    my $if_logged_in = $r->under( sub {
-    my $c =shift;
-    return $c->is_logged_in || $c->auth_fail($c->l("acs_LOGIN"));
-    });
-    $if_logged_in->post('/swttheme')->to('swttheme#main')->name('swttheme');
-    $if_logged_in->get('/review')->to('review#main')->name('review');
-    $if_logged_in->get('/logout')->to('logout#logout')->name('logout');
-    $if_logged_in->get('/userpassword')->to('userpassword#main')->name('passwd');
-    $if_logged_in->post('/userpassword')->to('userpassword#change_password')->name('passwd2');
+sub get_badcountries {
+    my $c    = shift;
+    my $full = shift;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $badc = $cdb->get_prop("masq", "BadCountries") || "";
+    return $badc unless $full;
+    my $rev = (($cdb->get_prop("masq", "XTGeoipRev") || "disabled") eq "enabled") ? "!=" : "==";
+    return "$rev $badc ";
+} ## end sub get_badcountries
 
-    my $if_admin = $r->under( sub {
-        my $c = shift;
-        # Call the imported function directly
-        return check_admin_access($c) || $c->auth_fail($c->l("acs_ADMIN"));
-    });
+sub get_geoip {
+    return $cdb->get_prop("masq", "GeoIP") || 'disabled';
+}
 
-    $if_admin->get('/backup')->to('backup#main')->name('backup');
-    $if_admin->post('/backup')->to('backup#do_display')->name('backupd');
-    $if_admin->get('/backupd')->to('backup#do_display')->name('backupc'); # corrections #
-    $if_admin->post('/backupd')->to('backup#do_update')->name('backupu');
+sub get_reverse {
+    my $c    = shift;
+    my $item = shift;
+    my $prop = shift;
+    $item = ($item eq 'masq') ? $item : $c->param('Name');
+    return $cdb->get_prop("$item", "$prop") || "disabled";
+} ## end sub get_reverse
 
-    $if_admin->get('/bugreport')->to('bugreport#main')->name('bugreport');
-    $if_admin->post('/bugreport')->to('bugreport#do_report')->name('bugreport2');
-    $if_admin->post('/bugreportD')->to('bugreport#download_config_report')->name('bugreportD');
+sub get_stat_geoip {
+    my $c = shift;
 
-    $if_admin->get('/clamav')->to('clamav#main')->name('clamav');
-    $if_admin->post('/clamav')->to('clamav#do_update')->name('clamav2');
+    if (system("/bin/test -f /lib/modules/`/bin/uname -r`/weak-updates/xtables-addons/xt_geoip.ko") != 0) {
+        return $c->l('xtg_ERROR_MISSING_MODULE');
+    } elsif (system("/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0) {
+        return $c->l('xtg_ERROR_UNLOADED_MODULE');
+    } elsif (get_geoip() eq 'enabled' && system("/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0) {
+        return $c->l('xtg_ERROR_FILTER_CHAIN_MISSING');
+    } else {
+        return '';
+    }
+} ## end sub get_stat_geoip
 
-    $if_admin->get('/datetime')->to('datetime#main')->name('datetime');
-    $if_admin->post('/datetimeu')->to('datetime#do_update')->name('datetimeu');
-    $if_admin->get('/datetimed')->to('datetime#do_display')->name('datetimed');
-    $if_admin->post('/datetimet')->to('datetime#do_testntp')->name('datetimet');
+sub get_stat_license_key {
+    my $c = shift;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
 
-
-    $if_admin->get('/directory')->to('directory#main')->name('directory');
-    $if_admin->post('/directory')->to('directory#do_update')->name('directory2');
-
-    $if_admin->get('/domains')->to('domains#main')->name('domainsg');
-    $if_admin->post('/domains')->to('domains#do_display')->name('domainsp');
-    $if_admin->get('/domains2')->to('domains#do_display')->name('domains2g');
-    $if_admin->post('/domains2')->to('domains#do_update')->name('domains2p');
-
-    $if_admin->get('/emailsettings')->to('emailsettings#main')->name('emailsettings');
-    $if_admin->post('/emailsettings')->to('emailsettings#do_display')->name('emailsetting');
-    $if_admin->post('/emailsettingd')->to('emailsettings#do_update')->name('emailsettingu');
-
-    $if_admin->get('/groups')->to('groups#main')->name('groupsl');
-    $if_admin->post('/groups')->to('groups#do_display')->name('groupa');
-    $if_admin->get('/groups2')->to('groups#do_display')->name('groupd');
-    $if_admin->post('/groups2')->to('groups#do_update')->name('groupu');
-
-    $if_admin->get('/hostentries')->to('hostentries#main')->name('hostentries');
-    $if_admin->post('/hostentries')->to('hostentries#do_display')->name('hostentryadd');
-    $if_admin->get('/hostentriesd')->to('hostentries#do_display')->name('hostentrydis');
-    $if_admin->post('/hostentriesd')->to('hostentries#do_update')->name('hostentryupd');
-
-    $if_admin->get('/ibays')->to('ibays#main')->name('ibays');
-    $if_admin->post('/ibays')->to('ibays#do_display')->name('ibayadd');
-    $if_admin->get('/ibaysd')->to('ibays#do_display')->name('ibaydis');
-    $if_admin->post('/ibaysd')->to('ibays#do_update')->name('ibayupd');
-
-    $if_admin->get('/localnetworks')->to('localnetworks#main')->name('localnetworks');
-    $if_admin->post('/localnetworks')->to('localnetworks#do_display')->name('localnetworks');
-    $if_admin->post('/localnetworksa')->to('localnetworks#do_display')->name('localnetworksadd');
-    $if_admin->post('/localnetworksb')->to('localnetworks#do_display')->name('localnetworksadd1');
-    $if_admin->get('/localnetworksd')->to('localnetworks#do_display')->name('localnetworksdel');
-    $if_admin->post('/localnetworkse')->to('localnetworks#do_display')->name('localnetworksdel1');
-
-    $if_admin->get('/portforwarding')->to('portforwarding#main')->name('portforwarding');
-    $if_admin->post('/portforwarding')->to('portforwarding#do_display')->name('portforwarding');
-    $if_admin->post('/portforwardinga')->to('portforwarding#do_display')->name('portforwardingadd');
-    $if_admin->post('/portforwardingb')->to('portforwarding#do_display')->name('portforwardingadd1');
-    $if_admin->get('/portforwardingd')->to('portforwarding#do_display')->name('portforwardingdel');
-    $if_admin->post('/portforwardinge')->to('portforwarding#do_display')->name('portforwardingdel1');
-
-    $if_admin->get('/printers')->to('printers#main')->name('printersg');
-    $if_admin->post('/printers')->to('printers#do_display')->name('printera');
-    $if_admin->get('/printers2')->to('printers#do_display')->name('printer2g');
-    $if_admin->post('/printers2')->to('printers#do_update')->name('printers2p');
-
-    $if_admin->get('/proxy')->to('proxy#main')->name('proxy');
-    $if_admin->post('/proxy')->to('proxy#do_update')->name('proxy2');
-
-    $if_admin->get('/pseudonyms')->to('pseudonyms#main')->name('pseudonymsl');
-    $if_admin->post('/pseudonyms')->to('pseudonyms#do_display')->name('pseudonyma');
-    $if_admin->get('/pseudonyms2')->to('pseudonyms#do_display')->name('pseudonymd');
-    $if_admin->post('/pseudonyms2')->to('pseudonyms#do_update')->name('pseudonymu');
-
-    $if_admin->get('/qmailanalog')->to('qmailanalog#main')->name('qmailanalog');
-    $if_admin->post('/qmailanalog')->to('qmailanalog#do_update')->name('qmailanalog2');
-
-    $if_admin->get('/quota')->to('quota#main')->name('quota');
-    $if_admin->get('/quotad')->to('quota#do_display')->name('quotalist');
-    $if_admin->post('/quotad')->to('quota#do_update')->name('quotaupd');
-    $if_admin->post('/quota2')->to('quota#do_update')->name('quotaval');
-
-    $if_admin->get('/reboot')->to('reboot#main')->name('reboot');
-    $if_admin->post('/reboot')->to('reboot#do_action')->name('rebootact');
-
-    $if_admin->get('/remoteaccess')->to('remoteaccess#main')->name('remoteaccess');
-    $if_admin->post('/remoteaccess')->to('remoteaccess#do_action')->name('remoteaccessact');
-
-    $if_admin->get('/support')->to('support#main')->name('support');
-
-    $if_admin->get('/useraccounts')->to('useraccounts#main')->name('useraccounts');
-    $if_admin->post('/useraccounts')->to('useraccounts#do_display')->name('useraccountadd');
-    $if_admin->get('/useraccountsd')->to('useraccounts#do_display')->name('useraccountdis');
-    $if_admin->post('/useraccountsd')->to('useraccounts#do_update')->name('useraccountupd');
-    $if_admin->post('/useraccountso')->to('useraccounts#do_display')->name('useraccountvpn');
-
-    $if_admin->get('/viewlogfiles')->to('viewlogfiles#main')->name('viewlogfiles');
-    $if_admin->post('/viewlogfiles')->to('viewlogfiles#do_action')->name('viewlogfiles2');
-    $if_admin->post('/viewlogfilesr')->to('viewlogfiles#do_action')->name('viewlogfilesr');
-
-    $if_admin->get('/yum')->to('yum#main')->name('yum');
-    $if_admin->post('/yum')->to('yum#do_display')->name('yumd1');
-    $if_admin->get('/yumd')->to('yum#do_display')->name('yumd');
-    $if_admin->post('/yumd')->to('yum#do_update')->name('yumu');
-
-    $if_admin->get('/welcome')->to('welcome#main')->name('welcome');
-
-    $if_admin->get('/workgroup')->to('workgroup#main')->name('workgroup');
-    $if_admin->post('/workgroup')->to('workgroup#do_update')->name('workgroup2');
-
-    # additional routes (for contribs) got from 'routes' db
-    #my @routes = @{SrvMngr::get_routes_list()};
-
-    #foreach (@{SrvMngr::get_routes_list()}) {
-        #if ( defined $_->{method} and defined $_->{url} and defined $_->{ctlact} and defined $_->{name} ) {
-            #my $menu = defined $_->{menu} ? $_->{menu} : 'A';
-            #if ( $menu eq 'N' ) {
-                #$r->get($_->{url})->to($_->{ctlact})->name($_->{name})
-                #if ( $_->{method} eq 'get');
-            #$r->post($_->{url})->to($_->{ctlact})->name($_->{name})
-                #if ( $_->{method} eq 'post');
-            #} elsif ( $menu eq 'U' ) {
-                #$if_logged_in->get($_->{url})->to($_->{ctlact})->name($_->{name})
-                #if ( $_->{method} eq 'get');
-            #$if_logged_in->post($_->{url})->to($_->{ctlact})->name($_->{name})
-                #if ( $_->{method} eq 'post');
-            #} else {
-                #$if_admin->get($_->{url})->to($_->{ctlact})->name($_->{name})
-                #if ( $_->{method} eq 'get');
-            #$if_admin->post($_->{url})->to($_->{ctlact})->name($_->{name})
-                #if ( $_->{method} eq 'post');
-            #}
-        #}
-    #}
-
-    foreach my $route (@{SrvMngr::get_routes_list()}) {
-        if (defined $route->{method} && defined $route->{url} && defined $route->{ctlact} && defined $route->{name}) {
-            my $menu = defined $route->{menu} ? $route->{menu} : 'A';
-
-            # Fix controller case: convert "ControllerName" to "controllername" in "ControllerName#action"
-            # this is so that AdminLTE breadcrumb works  - it appears that perl Packages names are NOT case sensitive
-            # and that the breadcrumb package assumes that the package name is the same as the main route.
-            my ($controller, $action) = split /#/, $route->{ctlact}, 2;
-            my $fixed_ctlact = lc($controller) . '#' . $action;
-
-            if ($menu eq 'N') {
-                $r->get($route->{url})->to($fixed_ctlact)->name($route->{name})
-                    if $route->{method} eq 'get';
-                $r->post($route->{url})->to($fixed_ctlact)->name($route->{name})
-                    if $route->{method} eq 'post';
-            }
-            elsif ($menu eq 'U') {
-                $if_logged_in->get($route->{url})->to($fixed_ctlact)->name($route->{name})
-                    if $route->{method} eq 'get';
-                $if_logged_in->post($route->{url})->to($fixed_ctlact)->name($route->{name})
-                    if $route->{method} eq 'post';
-            }
-            else {  # Default: menu 'A'
-                $if_admin->get($route->{url})->to($fixed_ctlact)->name($route->{name})
-                    if $route->{method} eq 'get';
-                $if_admin->post($route->{url})->to($fixed_ctlact)->name($route->{name})
-                    if $route->{method} eq 'post';
-            }
+    if (($cdb->get_prop('geoip', 'status') || 'disabled') eq 'enabled') {
+        if (($cdb->get_prop('geoip', 'LicenseKey') || '') ne '') {
+            return '';
         }
-    }
+    } ## end if (($cdb->get_prop('geoip'...)))
+    return $c->l('xtg_ERROR_LICENSE_KEY');
+} ## end sub get_stat_license_key
 
+sub get_date_update {
+    #my $file = "/usr/share/xt_geoip/LE/A1.iv4";
+    my $file = "/usr/share/xt_geoip/A1.iv4";
+    my $filetime = (-e $file) ? (stat($file))[9] : 0;
+    return strftime("%Y/%m/%d %H:%M", localtime($filetime)) || '';
+} ## end sub get_date_update
 
-    $if_admin->get('/config/:key' => {key => qr/[a-z0-9]{2,32}/})->to('request#getconfig')->name('getconfig');
-    $if_admin->get('/account/:key' => {key => qr/[a-z0-9]{2,32}/})->to('request#getaccount')->name('getaccount');
-    $if_admin->get('/:module' => {module => qr/[a-z0-9]{2,32}/})->to('modules#modsearch')->name('module_search');
-    $if_admin->any('/*whatever' => {whatever => ''})->to('modules#whatever')->name('whatever');
-
-}
-
-
-sub setup_hooks {
+sub get_srv_name {
     my ($c) = @_;
-
-    $c->hook( before_routes => sub {
-    my $c = shift;
-    if ( not defined $c->session->{lang} ) {
-            SrvMngr::init_session ( $c );
-    }
-    $c->lang_space();
-    });
-
-    if ( my $path = $ENV{MOJO_REVERSE_PROXY} ) {
-    my @path_parts = grep /\S/, split m{/}, $path;
-        $c->hook( before_dispatch => sub {
-        my ( $c ) = @_;
-            my $url = $c->req->url;
-            my $base = $url->base;
-        push @{ $base->path }, @path_parts;
-            $base->path->trailing_slash(1);
-            $url->path->leading_slash(0);
-    });
-    }
-
+    return $c->param('Name');
 }
 
-
-sub init_session {
-
+sub get_services_table {
     my $c = shift;
-    $c->app->log->info("Init app session.");
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $choice = shift || 'sel';
+    my @services;
+    my @serv_rec;
 
-    my %datas = ();
-    %datas = %{SrvMngr::Model::Main->init_data()};
+    if ($choice ne 'all') {
+        @services = split(/,/, $cdb->get_prop("masq", "XtServices"));
 
-    $c->session->{lang} = $datas{'lang'};
-    $c->session->{copyRight} = $c->l($datas{'copyRight'});
-    $c->session->{releaseVersion} = $datas{'releaseVersion'};
-    $c->session->{PwdSet} = $datas{'PwdSet'};
-    $c->session->{SystemName} = $datas{'SystemName'};
-    $c->session->{DomainName} = $datas{'DomainName'};
-    $c->session->{Access} = $datas{'Access'};
-    if ( not defined $c->session->{CurrentTheme} ) {
-    $c->session->{CurrentTheme} = $c->config->{theme};
-    }
-}
-
-
-sub get_mod_url{
-
-    my $c = shift;
-    my $module = shift;
-
-    # test if module (panel) exists
-    my $module_file = $c->config->{modules_dir} . '/' . ucfirst($module) . '.pm';
-    if ( -e $module_file){
-        return "/$module";
-    }
-    return -1;
-}
-
-
-=head2 theme_list()
-
-Returns a hash of themes for the header theme field's drop down list.
-
-=cut
-
-
-sub theme_list {
-
-    my $c  = shift;
-
-    my @files = ();
-    my @themes = ();
-    my $theme_ignore = "(\.\.?)";
-
-#    my $themedir = '/usr/share/smanager/themes/';
-    my $themedir = $c->app->home->rel_file('themes/');
-
-    if (opendir (DIR, $themedir)) {
-        @files = grep (!/^${theme_ignore}$/, readdir(DIR));
-        closedir (DIR);
+        for (@services) {
+            my $rec = $cdb->get($_);
+            push @serv_rec, $rec if ($rec && $rec->prop('TCPPort'));
+        }
     } else {
-        warn "Can't open directory $themedir\n";
-    }
 
-    foreach my $theme (@files) {
-        if (-d "$themedir/$theme") {
-        push @themes, $theme;
+        for ($cdb->get_all_by_prop(type => 'service')) {
+            push @serv_rec, $_ if ($_->prop('TCPPort'));
         }
+    } ## end else [ if ($choice ne 'all') ]
+    return \@serv_rec;
+} ## end sub get_services_table
+
+sub get_srv_badcountries {
+    my ($c, $name, $full) = @_;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $badc = $cdb->get_prop($name, "BadCountries") || "";
+    return $badc unless $full;
+    my $rev = (($cdb->get_prop($name, "XTGeoipRev") || "disabled") eq "enabled") ? "!=" : "==";
+    return "$rev $badc ";
+} ## end sub get_srv_badcountries
+
+#Subroutine to list statistics
+sub generateStats {
+    my $c          = shift;
+    my $stats_type = shift;
+    my $out        = '';
+
+    # Untaint $name before use in system()
+    $stats_type =~ /(.+)/;
+    $stats_type = $1;
+
+    if ($stats_type ne "ipt" and $stats_type ne "ssh" and $stats_type ne "f2b") {
+        $out .= sprintf("<h3>%s %s </h3>", $c->l('xtg_INVALID_STATS_TYPE'), $stats_type);
+        return $out;
     }
 
-    return \@themes;
-}
+    # my $now_string = $c->gen_locale_date_string();
+    my $file        = "/var/lib/xt_geoip/extA_" . $stats_type . "_country.lst";
+    my $filetime    = (-e $file) ? (stat($file))[9] : 0;
+    my $date_string = strftime("%Y/%m/%d %H:%M", localtime($filetime)) || '';
+    $out .= sprintf("<h3>%s %s %s</h3>", $c->l('xtg_STATS_GENERATED'), $stats_type, $date_string);
+    open(Xt_GEOIPSTATS, $file);
+    $out .= sprintf "<pre>";
 
-
-#------------------------------------------------------------
-# subroutine to feed navigation bar
-#------------------------------------------------------------
-
-sub getNavigation {
-    my $class  = shift; #not the controller as it is called as an external, not part of the controller.
-    my $lang = shift || 'en-us';
-    my $menu = shift || 'N';
-    my $username = shift || ''; #Username when logged in as a user not admin
-
-#    my $lang = $c->session->{lang} || 'en-us';
-
-    # Use this variable throughout to keep track of files
-    # list of just the files
-
-    my @files = ();
-    my %files_hash = ();
-
-    # Added: Store allowed admin panels for non-admin users
-    my @allowed_admin_panels = ();
-    my $is_admin = 1;  # Default to admin (full access)
-
-    # Added: Check if user is non-admin and get their allowed panels
-    if ($username ne '') {
-        # Get the AccountsDB to check user permissions
-        my $accountsdb = esmith::AccountsDB::UTF8->open_ro() or
-            die "Couldn't open AccountsDB\n";
-
-        # Check if user has AdminPanels property
-        my $user_rec = $accountsdb->get($username);
-        if (defined $user_rec && $user_rec->prop('AdminPanels')) {
-            $is_admin = 0;  # User is non-admin with specific panel access
-            # Get comma-separated list of allowed admin panels
-            my $admin_panels = $user_rec->prop('AdminPanels');
-            @allowed_admin_panels = split(/,/, $admin_panels);
-        }
+    while (<Xt_GEOIPSTATS>) {
+        $out .= sprintf("%s", $_);
     }
+    close Xt_GEOIPSTATS;
+    $out .= sprintf "</pre>";
+    $out .= sprintf("<h3>%s</h3>", $c->l('xtg_END_OF_STATS'));
+    return $out;
+} ## end sub generateStats
 
-    #-----------------------------------------------------
-    # Determine the directory where the functions are kept
-    #-----------------------------------------------------
-    my $navigation_ctlr_ignore =
-    "(\.\.?|.*\-Custom\.pm|Swttheme\.pm|Login\.pm|Request\.pm|Modules\.pm|Legacypanel\.pm(-.*)?)";
-#   "(\.\.?|Initial\.pm|.*Manual\.pm|Swttheme\.pm|Request\.pm|Modules\.pm(-.*)?)";
-    my $navigation_cgi_ignore =
-    "(\.\.?|navigation|noframes|online-manual|(internal|pleasewait)(-.*)?)";
+#Subroutine to list countries codes
+sub generateCodes {
+    my $c   = shift;
+    my $out = '';
 
-#   my $ctrldir = $c->app->home->rel_file('lib/SrvMngr/Controller');
-    my $ctrldir = '/usr/share/smanager/lib/SrvMngr/Controller';
-    my $cgidir = '/etc/e-smith/web/panels/manager/cgi-bin/';
+    # my $now_string = $c->gen_locale_date_string();
+    my $file = "/usr/share/xt_geoip/geoip_countries_list.txt";
 
-    if (opendir (DIR, $ctrldir)) {
-        @files = grep (!/^${navigation_ctlr_ignore}$/,
-        readdir (DIR));
-        closedir (DIR);
-    } else {
-        warn "Can't open directory $ctrldir\n";
+    unless (-e $file) {
+        $out .= "<br>" . $c->l('xtg_INVALID_CODES_LIST');
+        return $out;
     }
+    my $filetime = (-e $file) ? (stat($file))[9] : 0;
+    my $date_string = strftime("%Y/%m/%d %H:%M", localtime($filetime)) || '';
+    $out .= sprintf("<h3>%s %s </h3>", $c->l('xtg_COUNTRY_LIST'), $date_string);
+    open(Xt_GEOIPCODES, $file);
+    $out .= sprintf "<pre>";
 
-    foreach my $file (@files) {
-        next if (-d "$ctrldir/$file");
-        next if ( $file !~ m/^[A-Z].*\.pm$/ );
-
-        my $file2 = lc($file);
-        $file2 =~ s/\.pm$//;
-        $files_hash{$file2} = 'ctrl';
+    while (<Xt_GEOIPCODES>) {
+        $out .= sprintf("%s", $_);
     }
+    close Xt_GEOIPCODES;
+    $out .= sprintf "</pre>";
+    $out .= sprintf("<h3>%s</h3>", $c->l('xtg_END_OF_CODES'));
+    return $out;
+} ## end sub generateCodes
 
-    # Is there some old panels not managed in new way ?
-    @files = ();
-    if (opendir (DIR, $cgidir)) {
-        @files = grep (!/^${navigation_cgi_ignore}$/,
-        readdir (DIR));
-        closedir (DIR);
-    }
+#Subroutine to list other services codes
+sub otherServices {
+    my ($c, $choice) = @_;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my %serv_ok = map { $_ => 1 } split(/,/, $cdb->get_prop("masq", "XtServices"));
 
-    foreach my $file (@files) {
-        next if (-d "$cgidir/$file");
-        $files_hash{$file} = 'cgim' if ( ! exists $files_hash{$file} );
-    }
+    # unless $choice eq 'all';
+    my @serv_others = ();
 
-    #--------------------------------------------------
-    # For each script, extract the description and category
-    # information. Build up an associative array mapping headings
-    # to heading structures. Each heading structure contains the
-    # total weight for the heading, the number of times the heading
-    # has been encountered, and another associative array mapping
-    # descriptions to description structures. Each description
-    # structure contains the filename of the particular cgi script
-    # and a weight.
-    #--------------------------------------------------
-    my %nav = ();
+    for ($cdb->get_all_by_prop(type => 'service')) {
+        next unless $_->prop('TCPPort');
 
-    use constant NAVIGATIONDIR => '/home/e-smith/db/navigation2';
-#    use constant WEBFUNCTIONS  => '/etc/e-smith/web/functions';
+        #    if ( $_->prop('TCPPort')) {
+        #	push @serv_others, $_->key unless exists( $serv_ok{$_->key});
+        push @serv_others, $_->key unless $choice eq 'sel' and not exists($serv_ok{ $_->key });
 
-    my $navinfo = NAVIGATIONDIR . "/navigation.$lang";
+        #    }
+    } ## end for ($cdb->get_all_by_prop...)
+    return \@serv_others;
+} ## end sub otherServices
 
-    my $navdb = esmith::NavigationDB->open_ro( $navinfo ) or die "Couldn't open $navinfo\n"; # no UTF8
-
-    # Check the navdb for anything with a UrlPath, which means that it doesn't
-    # have a cgi file to be picked up by the above code. Ideally, only pages
-    # that exist should be in the db, but that's not the case. Anything
-    # without a cgi file will have to remove themselves on uninstall from the
-    # navigation dbs.
-    foreach my $rec ($navdb->get_all)
-    {
-    if ($rec->prop('UrlPath'))
-    {
-        $files_hash{$rec->{key}} = $cgidir;
-    }
-    }
-
-    foreach my $file (keys %files_hash)
-        {
-        #my $heading = 'Unknown';
-        my $heading = 'Legacy';
-
-        my $description = $file;
-        my $headingWeight = 99999;
-        my $descriptionWeight = 99999;
-        my $urlpath = '';
-        my $menucat = 'A';  # admin menu (default)
-
-        my $rec = $navdb->get($file);
-
-        if (defined $rec)
-        {
-            $heading = $rec->prop('Heading');
-            $description = $rec->prop('Description');
-            $headingWeight = $rec->prop('HeadingWeight') || 99999; #Stop noise in logs if file in dir does not have nav header.
-            $descriptionWeight = $rec->prop('DescriptionWeight');
-            $urlpath = $rec->prop('UrlPath') || '';
-            $menucat = $rec->prop('MenuCat') || 'A';    # admin menu (default)
-        }
-
-        # Added: Check if this is an admin menu item and if user has access
-        if ($menucat eq 'A' && !$is_admin) {
-            # Skip this admin panel if user doesn't have access to it
-            my $has_access = 0;
-            my $file_no_ext = $file;
-            $file_no_ext =~ s/\.pm$//;  # Remove .pm extension if present
-            foreach my $allowed_panel (@allowed_admin_panels) {
-                if ($file_no_ext eq lc($allowed_panel)) {
-                    #die("Here!!$file $file_no_ext $allowed_panel ");
-                    $has_access = 1;
-                    last;
-                }
-            }
-            next if !$has_access;
-        }
-
-        next if $menu ne $menucat;
-
-        #--------------------------------------------------
-        # add heading, description and weight information to data structure
-        #--------------------------------------------------
-
-        unless (exists $nav {$heading})
-        {
-            $nav {$heading} = { COUNT => 0, WEIGHT => 0, DESCRIPTIONS => [] };
-        }
-
-        $nav {$heading} {'COUNT'} ++;
-        $nav {$heading} {'WEIGHT'} += $headingWeight;
-
-        # Check for manager panel, and assign the appropriate
-        #  cgi-bin prefix for the links.
-        # Grab the last 2 directories by splitting for '/'s and
-        #  then concatenating the last 2
-        # probably a better way, but I don't know it.
-
-        my $path;
-        if ( $files_hash{$file} eq 'ctrl') {
-            $path = "2";
-        } elsif ( $files_hash{$file} eq 'cgim') {
-            $path = "/cgi-bin";
-        } else {
-            my @filename = split /\//, $files_hash{$file};
-            $path = "/$filename[scalar @filename - 2]/$filename[scalar @filename - 1]";
-        };
-
-        push @{ $nav {$heading} {'DESCRIPTIONS'} },
-            { DESCRIPTION => $description,
-              WEIGHT => $descriptionWeight,
-              FILENAME => $urlpath ? $urlpath : "$path/$file",
-              CGIPATH => $path,
-              MENUCAT => $menucat
-            };
-    }
-
-    return \%nav;
-
-}
-
-sub simpleNavMerge {
-    #Used to merge two nav structures - used for the user and selected admin menu.
-    my ($class,$nav1, $nav2) = @_;
-    my %result = %$nav1;  # Start with a copy of first nav
-
-    # Merge in second nav
-    foreach my $heading (keys %$nav2) {
-        if (exists $result{$heading}) {
-            # Add counts and weights
-            $result{$heading}{COUNT} += $nav2->{$heading}{COUNT};
-            $result{$heading}{WEIGHT} += $nav2->{$heading}{WEIGHT};
-            # Append descriptions
-            push @{$result{$heading}{DESCRIPTIONS}}, @{$nav2->{$heading}{DESCRIPTIONS}};
-        } else {
-            # Just copy the heading
-            $result{$heading} = $nav2->{$heading};
-        }
-    }
-
-    return \%result;
-}
-
-
-
-sub _lang_space {
-
+#Subroutine to update list services codes
+sub do_otherServices {
     my $c = shift;
-
-    my $panel = $c->tx->req->url;
-    if ( $panel =~ m/\.css$|\.js$|\.jpg$|\.gif$|\.png$/ ) {
-    #warn "panel not treated $panel";
-    return
-    }
-
-    my $lang = ( $c->tx->req->headers->accept_language || ['en_US'] );
-    $lang = (split(/,/, $lang))[0];
-#    my $lang = (split(/,/, $c->tx->req->headers->accept_language))[0];
-## convert xx_XX lang format to xx-xx + delete .UTFxx + lowercase
-#    $lang =~ s/_(.*)\..*$/-${1}/;      # just keep 'en-us'
-    ##$lang = lc( substr( $lang,0,2 ) );    # just keep 'en'
-
-    $panel = '/initial' if ($panel eq '/' or $panel eq '');
-
-    (my $module = $panel) =~ s|\?.*$||;
-    $module =~ s|^/||;
-    $module = ucfirst($module);
-
-    my $moduleLong = "SrvMngr::I18N::Modules::$module";
-    (my $dir = $moduleLong) =~ s|::|/|g;
-    my $I18Ndir = $c->app->home->rel_file('lib/') . '/' . $dir;
-
-    ##$c->app->log->debug("$panel $module $moduleLong $I18Ndir");
-    if ( ! -d $I18Ndir ) {
-    ( $moduleLong = $moduleLong) =~ s/.$//;
-    ( $I18Ndir = $I18Ndir) =~ s/.$//;
-    }
-    if ( -d $I18Ndir ) {
-    ##    $c->app->log->debug("hook_b_r->panel route. lang: $lang  namespace: $moduleLong ldir; $I18Ndir");
-        warn "NS already loaded: $moduleLong \n" if ( $c->i18ns() eq $moduleLong );     # i18ns changed
-    $c->i18ns( $moduleLong, $lang );
-    } else {
-        warn "Locale lexicon missing for $module \n";
-    }
-};
-
-
-sub get_routes_list {
-
-    my $c  = shift;
-
-    my $rtdb = esmith::ConfigDB::UTF8->open_ro('routes') || die 'Cannot open Routes db';
-    my @routes = $rtdb->get_all();
-    my @rt;
-
-    for (@routes) {
-    my ( $contrib, $name ) = split ( /\+/, $_->key);
-        push @rt,
-        {   'method' => $_->prop('Method'), 'url' => $_->prop('Url'),
-        'ctlact' => $_->prop('Ctlact'), 'menu' => $_->prop('Menu'),
-        'name' => $name, 'contrib' => $contrib,
-        };
-    }
-    return \@rt;
-
-}
-
-
-sub ip_number {
-
-#  from CGI::FormMagick::Validator qw( ip_number );
-
-    my ($c, $data) = @_;
-
-    return undef unless defined $data;
-
-    return $c->l('FM_IP_NUMBER1') . " (" . $data . ")" unless $data =~ /^[\d.]+$/;
-
-    my @octets = split /\./, $data;
-    my $dots = ($data =~ tr/.//);
-
-    return $c->l('FM_IP_NUMBER2') unless (scalar @octets == 4 and $dots == 3);
-
-    foreach my $octet (@octets) {
-        return $c->l("FM_IP_NUMBER3", $octet) if $octet > 255;
-    }
-
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $serv1 = ($cdb->get_prop("masq", "XtServices")) || '';
+    my $serv2 = join(',', @{ $c->every_param('Selectedservices') });
+    $cdb->set_prop("masq", "XtServices", $serv2) if ($serv1 ne $serv2);
     return 'OK';
-}
+} ## end sub do_otherServices
 
-sub validate_password {
-    my ($c, $strength, $pass) = @_;
-    use esmith::util;
-    use POSIX qw(locale_h);
-    use locale;
-    my $old_locale = setlocale(LC_ALL);
-    setlocale(LC_ALL, "en_US");
-    my $reason = esmith::util::validatePassword($pass,$strength);
-    return "OK" if ($reason eq "ok");
-    setlocale(LC_ALL, $old_locale);
-    return
-          $c->l("Bad Password Choice") . ": "
-        . $c->l("The password you have chosen is not a good choice, because") . " "
-        . $c->l($reason). ".";
-} ## end sub validate_password
-
-# to deprecate : this is not anymore a way to validate our passwords
-sub is_normal_password {
-
-#  from CGI::FormMagick::Validator qw( password );
-
-    my ($c, $data) = @_;
-    $_ = $data;
-    if (not defined $_) {
-        return $c->l("FM_PASSWORD1");
-    } elsif (/\d/ and /[A-Z]/ and /[a-z]/ and /\W|_/ and length($_) > 6) {
-        return "OK";
-    } else {
-        return $c->l("FM_PASSWORD2");
-    }
-}
-
-sub gen_locale_date_string
-{
-    my $self = shift;
-    my $i18n = esmith::I18N->new();
-    $i18n->setLocale('formmagick', $i18n->preferredLanguage());
-    return strftime "%c", localtime;
-}
-
-sub get_public_ip_address
-{
-    my $self = shift;
-    my $cdb = esmith::ConfigDB::UTF8->open() || die "Couldn't open config db";
-    my $sysconfig = $cdb->get('sysconfig');
-    if ($sysconfig)
-    {
-        my $publicIP = $sysconfig->prop('PublicIP');
-        if ($publicIP)
-        {
-            return $publicIP;
-        }
-    }
-    return undef;
-}
-
-sub email_simple {
-    my ($c, $data) = @_;
-
-    use Mail::RFC822::Address;
-
-    if (not defined $data ) {
-        return $c->l("FM_EMAIL_SIMPLE1");
-    } elsif (Mail::RFC822::Address::valid($data)) {
-        return "OK";
-    } else {
-        return $c->l("FM_EMAIL_SIMPLE2");
-    }
-}
-
-
-sub mac_address_or_blank {
-    my ($c, $data) = @_;
-    return "OK" unless $data;
-    return mac_address($c, $data);
-}
-
-
-sub mac_address {
-
-#   from CGI::FormMagick::Validator::Network
-
-    my ($c, $data) = @_;
-
-    $_ = lc $data;  # easier to match on $_
-    if (not defined $_) {
-        return $c->l('FM_MAC_ADDRESS1');
-    } elsif (/^([0-9a-f][0-9a-f](:[0-9a-f][0-9a-f]){5})$/) {
-        return "OK";
-    } else {
-        return $c->l('FM_MAC_ADDRESS2');
-    }
-}
-
-
-sub ip_number_or_blank {
-
-    # XXX - FIXME - we should push this down into CGI::FormMagick
-
+sub change_settings {
     my $c = shift;
-    my $ip = shift;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $mq_bc    = get_badcountries();
+    my $mq_gp    = get_geoip();
+    my $masq     = $cdb->get('masq') || "disabled";
+    my $mq_rv    = $masq->prop('XTGeoipRev') || 'disabled';
+    my $mq_ot    = $masq->prop('XTGeoipOther') || 'disabled';
+    my $n_mq_bc  = $c->param("Masq_badcountries");
+    my $n_mq_gp  = $c->param("Masq_geoip") || $mq_gp;
+    my $n_upd_gp = $c->param("Update_geoip") || '';
+    my $n_mq_rv  = $c->param("Masq_reverse") || $mq_rv;
+    my $n_mq_ot  = $c->param("Masq_others") || $mq_ot;
 
-    if (!defined($ip) || $ip eq "")
+    if (   ($n_mq_bc eq $mq_bc)
+        && ($n_mq_gp eq $mq_gp)
+        && ($n_upd_gp eq 'NO')
+        && ($n_mq_rv eq $mq_rv)
+        && ($n_mq_ot eq $mq_ot))
     {
         return 'OK';
+    } ## end if (($n_mq_bc eq $mq_bc...))
+    $cdb->set_prop("masq", "BadCountries", $n_mq_bc);
+    $cdb->set_prop("masq", "GeoIP",        $n_mq_gp);
+    $cdb->set_prop("masq", "XTGeoipRev",   $n_mq_rv);
+    $cdb->set_prop("masq", "XTGeoipOther", $n_mq_ot);
+    my $eventloc = "xt_geoip-modify";
+    $eventloc = "xt_geoip-update" if $n_upd_gp eq 'YES';
+
+    unless (system("/sbin/e-smith/signal-event", $eventloc) == 0) {
+        return $c->l("xtg_ERROR_UPDATING");
     }
+    return 'OK';
+} ## end sub change_settings
 
-    return ip_number( $c, $ip );
-}
+=head2 valid_badcountries
 
+subroutine to validate countries.
+=cut
 
-sub subnet_mask {
+sub must_exist {
+    my $c       = shift;
+    my $listerr = "";
+    my @mq_bcs  = split /[,:]/, $c->param("Masq_badcountries");
 
-    my ( $data ) = @_;
+    if (@mq_bcs) {
+        my $ctr = @mq_bcs;
+        return $c->l('xtg_ERROR_COUNTRY_MAX', $ctr) if ($ctr > 50);
 
-    # we test for a valid mask or bit mask
-    my $tip="192.168.1.50";
-    my $block = new Net::Netmask("$tip/$data") or return "INV1 $data";
+        foreach my $bcs (@mq_bcs) {
+            #my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
+            my $file = "/usr/share/xt_geoip/" . $bcs . ".iv4";
+            if (!-f $file) { $listerr .= $bcs . ","; }
+        }
+        return $c->l('xtg_ERROR_COUNTRY_NOT_EXIST', $listerr) if $listerr;
+    } ## end if (@mq_bcs)
+    return 'OK';
+} ## end sub must_exist
 
-    if ($block->mask() eq "$data" || $block->bits() eq "$data") {
-        return "OK";
+sub remove_serv {
+    my ($c) = @_;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $name = $c->param('Name');
+
+    # Untaint $name before use in system()
+    $name =~ /(.+)/;
+    $name = $1;
+
+    if (my $serv = $cdb->get($name)) {
+        my $servBC = $serv->prop('BadCountries') || '';
+
+        if ($servBC ne '') {
+            my $tps = $cdb->get_prop_and_delete($name, "BadCountries");
+            $tps = $cdb->get_prop_and_delete($name, "XTGeoipRev");
+
+            unless (system("/sbin/e-smith/signal-event", "xt_geoip-service") == 0) {
+                return $c->l("xtg_ERROR_WHILE_DELETING_SERVICE") . ' ' . $name;
+            }
+            return 'OK';
+        } ## end if ($servBC ne '')
+    } else {
+        return $c->l('xtg_CANT_FIND_SERV');
     }
-    return "INV2 $data";
-}
+} ## end sub remove_serv
 
+sub modify_serv {
+    my ($c) = @_;
+    our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
+    my $name = $c->param('Name');
 
-sub get_reg_mask {
+    # Untaint $name before use in system()
+    $name =~ /(.+)/;
+    $name = $1;
 
-    my ( $address, $mask ) = @_;
+    if (my $serv = $cdb->get($name)) {
+        my $servBC  = $serv->prop('BadCountries') || '';
+        my $servRev = $serv->prop('XTGeoipRev')   || 'disabled';
+        my $n_servBC = $c->param("Masq_srv_badcountries");
+        my $n_servRev = $c->param("Masq_srv_reverse") || $servRev;
 
-    # we transform bit mask to regular mask
-    my $block = new Net::Netmask("$address/$mask");
+        if ($n_servBC eq $servBC && $n_servRev eq $servRev) {
+            return 'OK';
+        }
+        $cdb->set_prop($name, "BadCountries", $n_servBC);
+        $cdb->set_prop($name, "XTGeoipRev",   $n_servRev);
 
-    return $block->mask();
-}
-
-
+        unless (system("/sbin/e-smith/signal-event", "xt_geoip-service") == 0) {
+            return $c->l("xtg_ERROR_UPDATING") . ' ' . $name;
+        }
+        return 'OK';
+    } else {
+        return $c->l('xtg_CANT_FIND_SERV');
+    }
+} ## end sub modify_serv
 1;
