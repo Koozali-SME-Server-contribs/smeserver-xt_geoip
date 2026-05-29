@@ -1,4 +1,5 @@
 # masq : drop from geoip countries
+/sbin/modprobe xt_geoip
 {
   $OUT .=<<'EOF';
    # A blacklist chain for xtables-addons GEOIP
