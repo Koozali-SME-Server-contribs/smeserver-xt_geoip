@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 33
+%define release 34
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -78,8 +78,12 @@ rm -rf %{name}-%{version}
 
 
 %changelog
+* Sun Jun 21 2026 Zsolt Vasarhelyi <zsoltv@koozali.org> 1.3.1-34.sme
+- Also list services now definded in DB as configuration [SME: 13614]
+- remove old panel code
+
 * Thu May 28 2026 Jean-Philippe Pialasse <jpp@koozali.org> 1.3.1-33.sme
-- remove old panel link 
+- remove old panel link
 
 * Tue Oct 28 2025 Jean-Philippe Pialasse <jpp@koozali.org> 1.3.1-31.sme
 - Update the references in Createlinks to smeserver-*-update [SME: 13249]

@@ -278,7 +278,7 @@ sub get_services_table {
         }
     } else {
 
-        for ($cdb->get_all_by_prop(type => 'service')) {
+        for ($cdb->get_all_by_prop(type => 'service'), $cdb->get_all_by_prop(type => 'configuration')) {
             push @serv_rec, $_ if ($_->prop('TCPPort'));
         }
     } ## end else [ if ($choice ne 'all') ]
@@ -362,7 +362,7 @@ sub otherServices {
     # unless $choice eq 'all';
     my @serv_others = ();
 
-    for ($cdb->get_all_by_prop(type => 'service')) {
+    for ($cdb->get_all_by_prop(type => 'service'), $cdb->get_all_by_prop(type => 'configuration')) {
         next unless $_->prop('TCPPort');
 
         #    if ( $_->prop('TCPPort')) {
