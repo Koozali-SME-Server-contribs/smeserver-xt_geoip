@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 34
+%define release 35
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -13,9 +13,9 @@ Source: %{name}-%{version}.tar.xz
 
 BuildArchitectures: noarch
 BuildRoot: /var/tmp/%{name}-%{version}
-BuildRequires: e-smith-devtools
-Requires: e-smith-release >= 11.0
-Requires: server-manager >= 11
+BuildRequires: smeserver-devtools
+Requires: smeserver-release >= 11.0
+Requires: smeserver-manager >= 11
 Requires: xtables-addons >= 3.25
 # Is this required now?
 Requires: GeoIP >= 1.6.0
@@ -78,6 +78,9 @@ rm -rf %{name}-%{version}
 
 
 %changelog
+* Sun Jun 21 2026 Jean-Philippe Pialasse <jpp@koozali.org> 1.3.1-35.sme
+- fix missing imap(s) pop3(s) and other subservices [SME: 13614]
+
 * Sun Jun 21 2026 Zsolt Vasarhelyi <zsoltv@koozali.org> 1.3.1-34.sme
 - Also list services now definded in DB as configuration [SME: 13614]
 - remove old panel code
