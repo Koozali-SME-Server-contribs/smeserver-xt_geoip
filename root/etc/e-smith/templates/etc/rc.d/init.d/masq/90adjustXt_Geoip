@@ -7,7 +7,9 @@
     my $PATH2_MODULE = "/lib/modules/$KERNEL/weak-updates/xt_geoip.ko";
     my $PATH3_MODULE = "/lib/modules/$KERNEL/weak-updates/xtables-addons/xt_geoip.ko";
     my $port;
+    my $ports;
     my @locPorts;
+    my @locUDPPorts;
     my $servStatus;
     my $locBC;
 
@@ -73,6 +75,9 @@ EOF
 
             foreach my $servName (@services) {
                 $port = ${$servName}{'TCPPort'} || '';
+                $ports = ${$servName}{'TCPPorts'} || '';
+                my @aports; push(@aports, ($port, $ports));
+	        $port = join(',',@aports) if ($port ne '' and $ports ne '' );
                 my $servStatus = ${$servName}{'status'}       || 'disabled';
                 my $servAccess = ${$servName}{'access'}       || 'private';
                 my $locBC      = ${$servName}{'BadCountries'} || '';
@@ -81,10 +86,28 @@ EOF
                 if ($port ne '' and $servStatus eq 'enabled' and $servAccess eq 'public' and $locBC ne '') {
                     push @locPorts, $port;
                     my $multi = ($port =~ /[,:]/) ? "-m multiport --dports" : "--dport";
-                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j NFLOG --nflog-prefix \"GeoIP BAN: $servName\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j NFLOG --nflog-prefix \"GeoIP BAN: $servName TCP\"\n";
                     $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p tcp $multi $port -j DROP\n";
                 } ## end if ($port ne '' and $servStatus...)
             } ## end foreach my $servName (@services)
+
+            foreach my $servName (@services)
+            {
+                $port = ${$servName}{'UDPPort'} || '';
+                $ports = ${$servName}{'UDPPorts'} || '';
+                my @aports; push(@aports, $port, $ports);
+                $port = join(',',@aports) if ($port ne '' and $ports ne '' );
+                my $servStatus = ${$servName}{'status'} || 'disabled';
+                my $servAccess = ${$servName}{'access'} || 'private';
+                my $locBC = ${$servName}{'BadCountries'} || '';
+                my $reverse = ( ( ${$servName}{'XTGeoipRev'} || 'disabled' ) eq "enabled" )? "!":  "";
+                if ($port ne '' and $servStatus eq 'enabled' and $servAccess eq 'public' and $locBC ne '') {
+                    push  @locUDPPorts, $port;
+                    my $multi = ( $port =~ /[,:]/ )? "-m multiport --dports" : "--dport";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p udp $multi $port -j NFLOG --ulog-prefix \"GeoIP BAN: $servName UDP\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p udp $multi $port -j DROP\n";
+                }
+            } # end foreach services UDP
 
             # block for all or other ports should move there
             if ($BC ne '') {
@@ -100,6 +123,18 @@ EOF
                     $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j NFLOG --nflog-prefix \"GeoIP BAN: ALL\"\n";
                     $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p tcp -m geoip $reverse --src-cc $BC -j DROP\n";
                 }
+
+                @locUDPPorts = () unless $others;
+                if (@locUDPPorts != 0) {
+                    my $LocPorts = join ',', @locUDPPorts;
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip -m multiport ! --dports $LocPorts $reverse --src-cc $BC -j NFLOG --ulog-prefix \"GeoIP BAN: OTHER UDP\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip -m multiport ! --dports $LocPorts  $reverse --src-cc $BC -j DROP\n";
+                } else {
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip $reverse --src-cc $BC -j ULOG --ulog-prefix \"GeoIP BAN: ALL UDP\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip $reverse --src-cc $BC -j DROP\n";
+                }
+
+
             } ## end if ($BC ne '')
             $OUT .= "    /sbin/iptables --append  \$NEW_XTGeoIP" . " -j RETURN\n";
             ## end of add

@@ -274,12 +274,13 @@ sub get_services_table {
 
         for (@services) {
             my $rec = $cdb->get($_);
-            push @serv_rec, $rec if ($rec && $rec->prop('TCPPort'));
+            push @serv_rec, $rec if ($rec && ( $rec->prop('TCPPort') || $rec->prop('TCPPorts') || $rec->prop('UDPPort') || $rec->prop('UDPPorts') ));
         }
     } else {
 
         for ($cdb->get_all_by_prop(type => 'service'), $cdb->get_all_by_prop(type => 'configuration')) {
-            push @serv_rec, $_ if ($_->prop('TCPPort'));
+            push @serv_rec, $_ if ($_->prop('TCPPort')|| $_->prop('TCPPorts') || $_->prop('UDPPort') || $_->prop('UDPPorts') );
+
         }
     } ## end else [ if ($choice ne 'all') ]
     return \@serv_rec;
@@ -363,7 +364,7 @@ sub otherServices {
     my @serv_others = ();
 
     for ($cdb->get_all_by_prop(type => 'service'), $cdb->get_all_by_prop(type => 'configuration')) {
-        next unless $_->prop('TCPPort');
+        next unless ($_->prop('TCPPort') || $_->prop('TCPPorts') || $_->prop('UDPPort') || $_->prop('UDPPorts') );
 
         #    if ( $_->prop('TCPPort')) {
         #	push @serv_others, $_->key unless exists( $serv_ok{$_->key});

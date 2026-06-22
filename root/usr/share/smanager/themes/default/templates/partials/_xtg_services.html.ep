@@ -18,7 +18,9 @@
             %=l 'NAME'
             </th><th class='sme-border'>
             %=l 'PORT'
-            </th><th class='sme-border'>
+            (TCP)</th><th class='sme-border'>
+            %=l 'PORT'
+            (UDP)</th><th class='sme-border'>
             %=l 'STATUS'
             </th><th class='sme-border'>
             %=l 'ACCESS'
@@ -37,10 +39,13 @@
 %       if ($svRev eq '!=' ) { $color = 'green'; }
 %       if ($sv->prop('status') eq 'disabled' || $sv->prop('access') ne 'public') { $color = 'grey'; $deco= "line-through"; }
 %       my $BC = "<font color='$color' style='text-decoration: $deco'>"."$svRev $svBC"."</font>";
+%       my $tcp = join(', ', grep { defined && $_ ne '' } ($sv->prop('TCPPort'), $sv->prop('TCPPorts')));
+%       my $udp = join(', ', grep { defined && $_ ne '' } ($sv->prop('UDPPort'), $sv->prop('UDPPorts')));
 
         <tr>
             %= t td => (class => 'sme-border') => $sv->key
-            %= t td => (class => 'sme-border') => $sv->prop('TCPPort')
+            %= t td => (class => 'sme-border') => $tcp 
+            %= t td => (class => 'sme-border') => $udp
             %= t td => (class => 'sme-border') => $sv->prop('status')
             %= t td => (class => 'sme-border') => $sv->prop('access')
             %= t td => (class => 'sme-border') => $c->render_to_string(inline => $BC)
