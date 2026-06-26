@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 36
+%define release 37
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -78,6 +78,9 @@ rm -rf %{name}-%{version}
 
 
 %changelog
+* Fri Jun 26 2026 Jean-Philippe Pialasse <jpp@koozali.org> 1.3.1-37.sme
+- fix service reverse match (!=) config screen mismatch
+
 * Sun Jun 21 2026 Jean-Philippe Pialasse <jpp@koozali.org> 1.3.1-36.sme
 - add ability to block UDP service [SME: 12418]
 - also display TCPPorts and UDPPorts

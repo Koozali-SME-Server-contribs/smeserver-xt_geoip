@@ -44,7 +44,7 @@
     <br><span class=label>
     %=l 'xtg_LABEL_REVERSE_MATCH'
     </span><span class=data>
-    % param 'Masq_srv_reverse' => $c->get_reverse('masq','XTGeoipRev') unless param 'Masq_srv_reverse';
+    % param 'Masq_srv_reverse' => $c->get_reverse($xtg_datas->{name},'XTGeoipRev') unless param 'Masq_srv_reverse';
     %= select_field 'Masq_srv_reverse' => [['!=' => 'enabled'], ['==' => 'disabled']], class => 'input'
     </span></p>
 
