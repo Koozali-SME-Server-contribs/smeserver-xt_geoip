@@ -104,7 +104,7 @@ EOF
                 if ($port ne '' and $servStatus eq 'enabled' and $servAccess eq 'public' and $locBC ne '') {
                     push  @locUDPPorts, $port;
                     my $multi = ( $port =~ /[,:]/ )? "-m multiport --dports" : "--dport";
-                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p udp $multi $port -j NFLOG --ulog-prefix \"GeoIP BAN: $servName UDP\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p udp $multi $port -j NFLOG --nflog-prefix \"GeoIP BAN: $servName UDP\"\n";
                     $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -m geoip $reverse --src-cc $locBC -p udp $multi $port -j DROP\n";
                 }
             } # end foreach services UDP
@@ -127,10 +127,10 @@ EOF
                 @locUDPPorts = () unless $others;
                 if (@locUDPPorts != 0) {
                     my $LocPorts = join ',', @locUDPPorts;
-                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip -m multiport ! --dports $LocPorts $reverse --src-cc $BC -j NFLOG --ulog-prefix \"GeoIP BAN: OTHER UDP\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip -m multiport ! --dports $LocPorts $reverse --src-cc $BC -j NFLOG --nflog-prefix \"GeoIP BAN: OTHER UDP\"\n";
                     $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip -m multiport ! --dports $LocPorts  $reverse --src-cc $BC -j DROP\n";
                 } else {
-                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip $reverse --src-cc $BC -j ULOG --ulog-prefix \"GeoIP BAN: ALL UDP\"\n";
+                    $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip $reverse --src-cc $BC -j NFLOG --nflog-prefix \"GeoIP BAN: ALL UDP\"\n";
                     $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -p udp -m geoip $reverse --src-cc $BC -j DROP\n";
                 }
 

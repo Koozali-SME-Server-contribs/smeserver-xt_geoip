@@ -1,6 +1,6 @@
 %define name smeserver-xt_geoip
 %define version 1.3.1
-%define release 37
+%define release 38
 
 Summary: smserver rpm to setup database, update and configuration for xt_geoip module with a panel.
 Name: %{name}
@@ -78,6 +78,9 @@ rm -rf %{name}-%{version}
 
 
 %changelog
+* Wed Jul 08 2026 John Crisp <jcrisp@safeandsoundit.co.uk> 1.3.1-38.sme
+- Fix ulog references [SME: 12418]
+
 * Fri Jun 26 2026 Jean-Philippe Pialasse <jpp@koozali.org> 1.3.1-37.sme
 - fix service reverse match (!=) config screen mismatch
 
