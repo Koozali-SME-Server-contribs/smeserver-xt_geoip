@@ -227,7 +227,7 @@ sub get_reverse {
 sub get_stat_geoip {
     my $c = shift;
 
-    if (system("/bin/test -f /lib/modules/`/bin/uname -r`/weak-updates/xtables-addons/xt_geoip.ko") != 0) {
+    if (system("/bin/test -f /lib/modules/`/bin/uname -r`/weak-updates/xtables-addons/xt_geoip.ko|| /bin/test -f /lib/modules/`/bin/uname -r`/extra/xtables-addons/xt_geoip.ko") != 0) {
         return $c->l('xtg_ERROR_MISSING_MODULE');
     } elsif (system("/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0) {
         return $c->l('xtg_ERROR_UNLOADED_MODULE');
@@ -251,8 +251,9 @@ sub get_stat_license_key {
 } ## end sub get_stat_license_key
 
 sub get_date_update {
-    #my $file = "/usr/share/xt_geoip/LE/A1.iv4";
-    my $file = "/usr/share/xt_geoip/A1.iv4";
+    my $file = -e "/usr/share/xt_geoip/LE/A1.iv4" 
+         ? "/usr/share/xt_geoip/LE/A1.iv4" 
+         : "/usr/share/xt_geoip/A1.iv4";
     my $filetime = (-e $file) ? (stat($file))[9] : 0;
     return strftime("%Y/%m/%d %H:%M", localtime($filetime)) || '';
 } ## end sub get_date_update
@@ -428,6 +429,7 @@ subroutine to validate countries.
 sub must_exist {
     my $c       = shift;
     my $listerr = "";
+    my @errors;
     my @mq_bcs  = split /[,:]/, $c->param("Masq_badcountries");
 
     if (@mq_bcs) {
@@ -435,11 +437,16 @@ sub must_exist {
         return $c->l('xtg_ERROR_COUNTRY_MAX', $ctr) if ($ctr > 50);
 
         foreach my $bcs (@mq_bcs) {
-            #my $file = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
+            my $fileLE = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
             my $file = "/usr/share/xt_geoip/" . $bcs . ".iv4";
-            if (!-f $file) { $listerr .= $bcs . ","; }
+	    if (!-f $file && !-f $fileLE) {
+                push @errors, $bcs;
+            }
         }
-        return $c->l('xtg_ERROR_COUNTRY_NOT_EXIST', $listerr) if $listerr;
+	if (@errors) {
+            my $listerr = join(', ', @errors); # Joint proprement sans virgule finale
+            return $c->l('xtg_ERROR_COUNTRY_NOT_EXIST', $listerr);
+        }
     } ## end if (@mq_bcs)
     return 'OK';
 } ## end sub must_exist
