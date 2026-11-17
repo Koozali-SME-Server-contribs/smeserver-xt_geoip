@@ -20,6 +20,7 @@ use SrvMngr::I18N;
 use SrvMngr qw( theme_list init_session );
 use esmith::util;
 use esmith::ConfigDB::UTF8;
+use File::Find;
 
 our ($cdb);
 #our $cdb = esmith::ConfigDB::UTF8->open() or die "Couldn't open ConfigDB::UTF8\n";
@@ -226,9 +227,20 @@ sub get_reverse {
 
 sub get_stat_geoip {
     my $c = shift;
-
-    if (system("/bin/test -f /lib/modules/`/bin/uname -r`/weak-updates/xtables-addons/xt_geoip.ko|| /bin/test -f /lib/modules/`/bin/uname -r`/extra/xtables-addons/xt_geoip.ko") != 0) {
-        return $c->l('xtg_ERROR_MISSING_MODULE');
+    my $kernel = `/bin/uname -r`;
+    chomp($kernel);
+    
+    my $module_found = 0;
+    if (-d "/lib/modules/$kernel") {
+       find(sub {
+          # Détecte xt_geoip.ko, xt_geoip.ko.xz, xt_geoip.ko.gz, etc.
+          if (/^xt_geoip\.ko(?:\.\w+)?$/ && -s $_) {
+            $module_found = 1;
+          }
+        }, "/lib/modules/$kernel");
+    }
+    
+    return $c->l('xtg_ERROR_MISSING_MODULE') unless $module_found;
     } elsif (system("/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0) {
         return $c->l('xtg_ERROR_UNLOADED_MODULE');
     } elsif (get_geoip() eq 'enabled' && system("/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0) {
@@ -251,9 +263,7 @@ sub get_stat_license_key {
 } ## end sub get_stat_license_key
 
 sub get_date_update {
-    my $file = -e "/usr/share/xt_geoip/LE/A1.iv4" 
-         ? "/usr/share/xt_geoip/LE/A1.iv4" 
-         : "/usr/share/xt_geoip/A1.iv4";
+    my $file = "/usr/share/xt_geoip/A1.iv4"; 
     my $filetime = (-e $file) ? (stat($file))[9] : 0;
     return strftime("%Y/%m/%d %H:%M", localtime($filetime)) || '';
 } ## end sub get_date_update
@@ -437,9 +447,8 @@ sub must_exist {
         return $c->l('xtg_ERROR_COUNTRY_MAX', $ctr) if ($ctr > 50);
 
         foreach my $bcs (@mq_bcs) {
-            my $fileLE = "/usr/share/xt_geoip/LE/" . $bcs . ".iv4";
             my $file = "/usr/share/xt_geoip/" . $bcs . ".iv4";
-	    if (!-f $file && !-f $fileLE) {
+	    if (!-f $file) {
                 push @errors, $bcs;
             }
         }

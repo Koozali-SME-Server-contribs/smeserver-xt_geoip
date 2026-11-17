@@ -1,11 +1,18 @@
 {
+    use File::Find;
     my $BC = $masq{BadCountries} || '';
     my $GP = $masq{GeoIP}        || 'disabled';
     my $KERNEL = `/bin/uname -r`;
     chomp($KERNEL);
-    my $PATH_MODULE  = "/lib/modules/$KERNEL/extra/xt_geoip.ko";
-    my $PATH2_MODULE = "/lib/modules/$KERNEL/weak-updates/xt_geoip.ko";
-    my $PATH3_MODULE = "/lib/modules/$KERNEL/weak-updates/xtables-addons/xt_geoip.ko";
+    my $found = 0;
+    if (-d "/lib/modules/$KERNEL") {
+        find(sub {
+            # Détecte xt_geoip.ko, xt_geoip.ko.xz, xt_geoip.ko.gz, etc.
+            if (/^xt_geoip\.ko(?:\.\w+)?$/ && -s $_) {
+                $found = 1;
+            }
+        }, "/lib/modules/$KERNEL");
+    }
     my $port;
     my $ports;
     my @locPorts;
@@ -35,7 +42,7 @@ EOF
 EOF
 
     if ($GP eq 'enabled') {
-        if (-s $PATH_MODULE || -s $PATH2_MODULE || -s $PATH3_MODULE) {
+        if ($found) {
 
             # do not block Localhost(s)
             $OUT .= "    /sbin/iptables -A \$NEW_XTGeoIP -s 127.0.0.0/24 -j RETURN\n";

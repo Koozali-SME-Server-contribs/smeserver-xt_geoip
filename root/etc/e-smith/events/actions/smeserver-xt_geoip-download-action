@@ -1,8 +1,20 @@
 #!/bin/bash
-cd /usr/share/xt_geoip
-if [ -f ./LE/A1.iv4 ]
+cd /usr/share/xt_geoip || exit 1
+
+# 1. if we mighrate from a SME10 version and old db is in place, move them 
+if [ ! -f ./A1.iv4 ] && [ -f ./LE/A1.iv4 ]; then
+    echo "migrating base from LE to root"
+    cp -a ./LE/*.iv* ./
+fi
+
+if [ -d ./LE ] || [ -d ./BE ]; then
+    echo "removing obsolete LE and BE directories"
+    rm -rf ./LE ./BE
+fi
+
+if [ -f ./A1.iv4 ]
 then
-    FILES=$(find ./LE -name A1.iv4 -type f -mtime +7)
+    FILES=$(find ./ -name A1.iv4 -type f -mtime +7)
     if [ -z $FILES ]
     then
 	echo "recent base, no download"
