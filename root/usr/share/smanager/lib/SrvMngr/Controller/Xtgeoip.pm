@@ -247,14 +247,14 @@ sub get_stat_geoip {
         );
     }
 
-    # 1️⃣ No module file on disk?
+    # 1 No module file on disk?
     return $c->l('xtg_ERROR_MISSING_MODULE') unless $module_found;
 
-    # 2️⃣ Module not loaded in the running kernel?
+    # 2 Module not loaded in the running kernel?
     return $c->l('xtg_ERROR_UNLOADED_MODULE')
         if system("/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0;
 
-    # 3️⃣ GeoIP filter chain missing in iptables?
+    # 3 GeoIP filter chain missing in iptables?
     return $c->l('xtg_ERROR_FILTER_CHAIN_MISSING')
         if get_geoip() eq 'enabled'
            && system("/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0;
