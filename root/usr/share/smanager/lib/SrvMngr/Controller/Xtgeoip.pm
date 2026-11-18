@@ -227,28 +227,41 @@ sub get_reverse {
 
 sub get_stat_geoip {
     my $c = shift;
+
+    # kernel version, e.g. "5.15.0-106-generic"
     my $kernel = `/bin/uname -r`;
-    chomp($kernel);
-    
+    chomp $kernel;
+
     my $module_found = 0;
-    if (-d "/lib/modules/$kernel") {
-       find(sub {
-          # Détecte xt_geoip.ko, xt_geoip.ko.xz, xt_geoip.ko.gz, etc.
-          if (/^xt_geoip\.ko(?:\.\w+)?$/ && -s $_) {
-            $module_found = 1;
-          }
-        }, "/lib/modules/$kernel");
+
+    # Look for a compiled xt_geoip kernel module under /lib/modules/<kernel>
+    if ( -d "/lib/modules/$kernel" ) {
+        find(
+            sub {
+                # matches xt_geoip.ko, xt_geoip.ko.xz, xt_geoip.ko.gz, …
+                if ( /^xt_geoip\.ko(?:\.\w+)?$/ && -s $_ ) {
+                    $module_found = 1;
+                }
+            },
+            "/lib/modules/$kernel"
+        );
     }
-    
+
+    # 1️⃣ No module file on disk?
     return $c->l('xtg_ERROR_MISSING_MODULE') unless $module_found;
-    } elsif (system("/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0) {
-        return $c->l('xtg_ERROR_UNLOADED_MODULE');
-    } elsif (get_geoip() eq 'enabled' && system("/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0) {
-        return $c->l('xtg_ERROR_FILTER_CHAIN_MISSING');
-    } else {
-        return '';
-    }
-} ## end sub get_stat_geoip
+
+    # 2️⃣ Module not loaded in the running kernel?
+    return $c->l('xtg_ERROR_UNLOADED_MODULE')
+        if system("/sbin/lsmod | grep 'xt_geoip' > /dev/null") != 0;
+
+    # 3️⃣ GeoIP filter chain missing in iptables?
+    return $c->l('xtg_ERROR_FILTER_CHAIN_MISSING')
+        if get_geoip() eq 'enabled'
+           && system("/sbin/iptables -L -n | grep 'XTGeoIP' > /dev/null") != 0;
+
+    # All checks passed – nothing to report
+    return '';
+}   ## end sub get_stat_geoip
 
 sub get_stat_license_key {
     my $c = shift;
